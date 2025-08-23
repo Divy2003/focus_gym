@@ -1,0 +1,19 @@
+:root {
+  /* Responsive font sizes and colors */
+  --font-main: 'Montserrat', Arial, sans-serif;
+  --font-xl: clamp(2rem, 5vw, 4.5rem);
+  --font-lg: clamp(1.5rem, 3.5vw, 2.5rem);
+  --font-md: clamp(1rem, 2vw, 1.5rem);
+  --font-base: 16px;
+  --color-dark: #141414;
+  --color-accent: #f9ef23;
+  --color-white: #fff;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background: var(--color-dark);
+  color: var(--color-white);
+  font-size: var(--font-base);
+}
