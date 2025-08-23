@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Dumbbell, Users, Trophy, Star, ArrowRight, Play, CheckCircle, Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { Menu, X, Dumbbell, Users, Trophy, Star, ArrowRight, Play, CheckCircle, Phone, Mail, MapPin, Clock, X as Close } from 'lucide-react';
 import '../styles/HomePage.css';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     setIsVisible(true);
@@ -80,8 +81,30 @@ const HomePage = () => {
     }
   ];
 
+  const openImageModal = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+    document.body.style.overflow = 'auto';
+  };
+
   return (
     <div className="homepage">
+      {selectedImage && (
+        <div className="image-modal" onClick={closeImageModal}>
+          <button className="close-modal" onClick={(e) => e.stopPropagation()}>
+            <Close size={24} />
+          </button>
+          <img 
+            src={selectedImage} 
+            alt="Full size" 
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
       {/* Navbar */}
       <nav className="navbar">
         <div className="nav-container">
@@ -182,18 +205,22 @@ const HomePage = () => {
             {transformations.map((transformation) => (
               <div key={transformation.id} className="transformation-card">
                 <div className="transformation-images">
-                  <img 
-                    src={transformation.beforeImage} 
-                    alt={`${transformation.name} before`}
-                    className="transformation-image"
-                  />
-                  <div className="image-label before-label">Before</div>
-                  <img 
-                    src={transformation.afterImage} 
-                    alt={`${transformation.name} after`}
-                    className="transformation-image"
-                  />
-                  <div className="image-label after-label">After</div>
+                  <div className="image-container" onClick={() => openImageModal(transformation.beforeImage)}>
+                    <img 
+                      src={transformation.beforeImage} 
+                      alt={`${transformation.name} before`}
+                      className="transformation-image"
+                    />
+                    <div className="image-label before-label">Before</div>
+                  </div>
+                  <div className="image-container" onClick={() => openImageModal(transformation.afterImage)}>
+                    <img 
+                      src={transformation.afterImage} 
+                      alt={`${transformation.name} after`}
+                      className="transformation-image"
+                    />
+                    <div className="image-label after-label">After</div>
+                  </div>
                 </div>
                 
                 <div className="transformation-info">

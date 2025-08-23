@@ -643,4 +643,52 @@ margin: 0 auto;
   margin: 0 auto;
     }
 }
-  
+
+/* Image Modal */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.image-modal img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: transform 0.2s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.close-modal:hover {
+  transform: scale(1.1);
+  background: rgba(255, 0, 0, 0.7);
+}
