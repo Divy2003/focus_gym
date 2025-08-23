@@ -1,19 +1,72 @@
-:root {
-  /* Responsive font sizes and colors */
-  --font-main: 'Montserrat', Arial, sans-serif;
-  --font-xl: clamp(2rem, 5vw, 4.5rem);
-  --font-lg: clamp(1.5rem, 3.5vw, 2.5rem);
-  --font-md: clamp(1rem, 2vw, 1.5rem);
-  --font-base: 16px;
-  --color-dark: #141414;
-  --color-accent: #f9ef23;
-  --color-white: #fff;
-}
+/* index.css - CSS Variables and Styles */
 
-body {
-  margin: 0;
-  font-family: var(--font-main);
-  background: var(--color-dark);
-  color: var(--color-white);
-  font-size: var(--font-base);
+:root {
+  /* Colors */
+  --primary-red: #ef4444;
+  --primary-orange: #f97316;
+  --secondary-red: #dc2626;
+  --secondary-orange: #ea580c;
+  --dark-bg: #111827;
+  --darker-bg: #0f172a;
+  --gray-800: #1f2937;
+  --gray-700: #374151;
+  --gray-600: #4b5563;
+  --gray-400: #9ca3af;
+  --gray-300: #d1d5db;
+  --white: #ffffff;
+  --black: #000000;
+  --green: #10b981;
+  --yellow: #fbbf24;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary-red), var(--primary-orange));
+  --gradient-secondary: linear-gradient(135deg, var(--secondary-red), var(--secondary-orange));
+  --gradient-bg: linear-gradient(135deg, var(--dark-bg), var(--darker-bg));
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-sm-2: 0.75rem;
+  --spacing-md: 1rem;
+  
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  --spacing-4xl: 5rem;
+  
+  /* Font Sizes */
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+  --text-7xl: 4.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 50%;
+  
+  /* Transitions */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.3s ease;
+  --transition-slow: all 0.5s ease;
+  
+  /* Container */
+  --container-max-width: 1280px;
+  --container-padding: var(--spacing-md);
 }
