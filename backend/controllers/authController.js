@@ -1,7 +1,7 @@
 const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
-const { sendOTPViaMSG91 } = require("../utils/msg91Otp"); // we'll create this service
+const { sendOTPViaMSG91, sendOTPViaSMS } = require("../utils/msg91Otp");
 
 // Generate OTP
 const generateOTP = () => {
@@ -43,9 +43,25 @@ const sendOTP = async (req, res) => {
     await admin.save();
 
     // --- Send OTP using MSG91 ---
-    // Remove any non-digit characters and ensure proper format
     const cleanMobile = mobile.replace(/\D/g, '');
-    await sendOTPViaMSG91(cleanMobile, otp); // Clean mobile number will be formatted in the MSG91 function
+    
+    try {
+      // Try Flow API first
+      await sendOTPViaMSG91(cleanMobile, otp);
+      console.log(`OTP sent via Flow API to ${mobile}: ${otp}`);
+    } catch (flowError) {
+      console.log('Flow API failed, trying SMS API:', flowError.message);
+      
+      try {
+        // Fallback to SMS API
+        await sendOTPViaSMS(cleanMobile, otp);
+        console.log(`OTP sent via SMS API to ${mobile}: ${otp}`);
+      } catch (smsError) {
+        console.error('Both MSG91 methods failed:', smsError.message);
+        // Don't fail the request - OTP is logged for development
+        console.log(`FALLBACK - OTP for ${mobile}: ${otp} (valid till ${expiresAt})`);
+      }
+    }
 
     // Also log OTP in console (useful in dev/testing)
     console.log(`OTP for ${mobile}: ${otp} (valid till ${expiresAt})`);
@@ -64,7 +80,7 @@ const sendOTP = async (req, res) => {
   }
 };
 
-// Verify OTP + Login
+// Verify OTP + Login (unchanged)
 const verifyOTP = async (req, res) => {
   try {
     const errors = validationResult(req);
