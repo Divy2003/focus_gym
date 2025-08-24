@@ -18,7 +18,7 @@ const memberSchema = new mongoose.Schema({
   },
   endingDate: {
     type: Date,
-    required: true
+    
   },
   month: {
     type: Number,

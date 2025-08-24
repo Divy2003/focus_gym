@@ -1,10 +1,7 @@
 // controllers/authController.js
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
-const twilio = require('twilio');
 const { validationResult } = require('express-validator');
-
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 // Generate OTP
 const generateOTP = () => {
@@ -45,27 +42,15 @@ const sendOTP = async (req, res) => {
     };
     await admin.save();
 
-    // Send OTP via Twilio
-    try {
-      await client.messages.create({
-        body: `Your GYM Admin login OTP is: ${otp}. Valid for 10 minutes.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: mobile
-      });
-
-      res.status(200).json({
-        success: true,
-        message: 'OTP sent successfully'
-      });
-    } catch (twilioError) {
-      console.error('Twilio error:', twilioError);
-      // For development, return OTP in response (remove in production)
-      res.status(200).json({
-        success: true,
-        message: 'OTP sent successfully',
-        otp: process.env.NODE_ENV === 'development' ? otp : undefined
-      });
-    }
+    // Log OTP to console for development
+    console.log(`OTP for ${mobile}: ${otp} (Valid until: ${expiresAt})`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully',
+      // Include OTP in response for development only
+      otp: process.env.NODE_ENV === 'development' ? otp : undefined
+    });
   } catch (error) {
     console.error('Send OTP error:', error);
     res.status(500).json({

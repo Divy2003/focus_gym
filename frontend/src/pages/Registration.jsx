@@ -92,7 +92,7 @@ const RegistrationForm = () => {
         description: formData.description.trim()
       };
 
-      const response = await fetch('/api/members', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiData)

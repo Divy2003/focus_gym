@@ -1,7 +1,7 @@
 // routes/memberRoutes.js
 const express = require('express');
 const { body } = require('express-validator');
-const authMiddleware = require('../middleware/auth');
+const authMiddleware = require('../middlewares/auth');
 const {
   addMember,
   getMembers,
@@ -19,6 +19,14 @@ const memberValidation = [
   body('month').isInt({ min: 1 }).withMessage('Month must be a positive integer'),
   body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number')
 ];
+// For updating a member (all fields optional)
+const updateMemberValidation = [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('mobile').optional().matches(/^\+?[1-9]\d{9,14}$/).withMessage('Invalid mobile number'),
+  body('month').optional().isInt({ min: 1 }).withMessage('Month must be a positive integer'),
+  body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number'),
+  body('status').optional().isIn(['pending', 'approved', 'expired']).withMessage('Invalid status value')
+];
 
 // Public route - Add member (no authentication required)
 router.post('/', memberValidation, addMember);
@@ -27,7 +35,7 @@ router.post('/', memberValidation, addMember);
 router.use(authMiddleware);
 
 router.get('/', getMembers);
-router.put('/:id', memberValidation, updateMember);
+router.put('/:id', updateMemberValidation, updateMember);
 router.delete('/:id', deleteMember);
 router.post('/bulk-delete', [
   body('memberIds').isArray().withMessage('Member IDs must be an array')

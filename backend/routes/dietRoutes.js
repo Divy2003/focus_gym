@@ -1,7 +1,7 @@
 // routes/dietRoutes.js
 const express = require('express');
 const { body } = require('express-validator');
-const authMiddleware = require('../middleware/auth');
+const authMiddleware = require('../middlewares/auth');
 const {
   createDietPlan,
   getDietPlans,

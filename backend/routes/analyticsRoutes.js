@@ -1,6 +1,6 @@
 // routes/analyticsRoutes.js
 const express = require('express');
-const authMiddleware = require('../middleware/auth');
+const authMiddleware = require('../middlewares/auth');
 const { getDashboardAnalytics, getExpiringMembers } = require('../controllers/analyticsController');
 
 const router = express.Router();
