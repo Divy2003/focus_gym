@@ -192,7 +192,7 @@ const RegistrationForm = () => {
             </div>
 
             <div>
-              <label htmlFor="fees">Membership Fees (₹)</label>
+              <label htmlFor="fees">Membership Fees </label>
               <input
                 type="number"
                 id="fees"
