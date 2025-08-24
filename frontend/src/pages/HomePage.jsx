@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Dumbbell, Users, Trophy, Star, ArrowRight, Play, CheckCircle, Phone, Mail, MapPin, Clock, X as Close } from 'lucide-react';
 import '../styles/HomePage.css';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -116,7 +117,9 @@ const HomePage = () => {
           
           {/* Desktop Menu */}
           <div className="nav-menu">
+            <Link to="/registration">
             <a href="#" className="btn-primary-nav">Join Today</a>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
