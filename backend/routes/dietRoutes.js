@@ -7,11 +7,7 @@ const {
   getDietPlans,
   getDietPlan,
   updateDietPlan,
-  deleteDietPlan,
-  testPDFGeneration,
-  getPDFUrl,
-  downloadPDF,
-  viewPDF
+  deleteDietPlan
 } = require('../controllers/dietController');
 
 const router = express.Router();
@@ -29,14 +25,7 @@ const dietPlanValidation = [
   body('meals.*.items').isArray().withMessage('Meal items must be an array')
 ];
 
-// Test PDF generation endpoint (for debugging)
-router.get('/test-pdf', testPDFGeneration);
-
-// PDF related routes
-router.get('/:id/pdf-url', getPDFUrl);
-router.get('/:id/download', downloadPDF);
-router.get('/:id/view', viewPDF);
-
+// Diet plan CRUD routes
 router.post('/', dietPlanValidation, createDietPlan);
 router.get('/', getDietPlans);
 router.get('/:id', getDietPlan);
