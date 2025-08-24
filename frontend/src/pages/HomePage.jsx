@@ -20,7 +20,7 @@ const HomePage = () => {
       beforeImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop&crop=face",
       afterImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=500&fit=crop&crop=face",
       duration: "6 months",
-      weightLost: "25 lbs"
+      weightLost: "5 Kg"
     },
     {
       id: 2,
@@ -28,7 +28,7 @@ const HomePage = () => {
       beforeImage: "https://images.unsplash.com/photo-1592621385612-4d7129426394?w=400&h=500&fit=crop&crop=face",
       afterImage: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=500&fit=crop&crop=face",
       duration: "8 months",
-      weightLost: "40 lbs"
+      weightLost: "14 Kg"
     },
     {
       id: 3,
@@ -36,7 +36,7 @@ const HomePage = () => {
       beforeImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=500&fit=crop&crop=face",
       afterImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop&crop=face",
       duration: "4 months",
-      weightLost: "18 lbs"
+      weightLost: "8 Kg"
     }
   ];
 
@@ -152,10 +152,12 @@ const HomePage = () => {
               Join thousands who've discovered their strongest selves. Premium equipment, expert trainers, and a community that pushes you to greatness.
             </p>
             <div className="hero-buttons">
+              <Link to="/registration">
               <a href="#" className="btn-primary">
                 Start Your Journey
                 <ArrowRight />
               </a>
+              </Link>
               
             </div>
           </div>
@@ -284,11 +286,13 @@ const HomePage = () => {
             Ready to Start Your Transformation?
           </h2>
           <p className="cta-description">
-            Join FITPRO today and become the best version of yourself
+            Join Focus Gym today and become the best version of yourself
           </p>
+          <Link to="/registration">
           <a href="#" className="cta-button">
             Join Today - Limited Time Offer
           </a>
+          </Link>
           <p className="cta-disclaimer">No commitment required • Cancel anytime</p>
         </div>
       </section>
@@ -310,8 +314,8 @@ const HomePage = () => {
               <Phone size={24} color="var(--primary-red)" />
               <h3>Call Us</h3>
               <p>
-                <a href="tel:+1234567890">+1 (234) 567-8900</a><br />
-                <a href="tel:+1234567891">+1 (234) 567-8901</a>
+                <a href="tel:+1234567890">+91 9913078721</a><br />
+                <a href="tel:+1234567891">+91 9913078721</a>
               </p>
             </div>
 
@@ -319,8 +323,8 @@ const HomePage = () => {
               <Mail size={24} color="var(--primary-red)" />
               <h3>Email Us</h3>
               <p>
-                <a href="mailto:info@fitprogym.com">info@fitprogym.com</a><br />
-                <a href="mailto:support@fitprogym.com">support@fitprogym.com</a>
+                <a href="mailto:info@focusgym.com">info@focusgym.com</a><br />
+                <a href="mailto:support@focusgym.com">support@focusgym.com</a>
               </p>
             </div>
 
@@ -328,9 +332,8 @@ const HomePage = () => {
               <MapPin size={24} color="var(--primary-red)" />
               <h3>Visit Us</h3>
               <p>
-                123 Fitness Street<br />
-                Health District, FIT 12345<br />
-                United States
+              3rd floor, hariom arcade, s.v school road, nr jakatnaka, Ayodhya Nagar, Kadi, Gujarat 384440
+                
               </p>
             </div>
 
@@ -338,9 +341,8 @@ const HomePage = () => {
               <Clock size={24} color="var(--primary-red)" />
               <h3>Opening Hours</h3>
               <p>
-                Monday - Friday: 5:00 AM - 11:00 PM<br />
-                Saturday - Sunday: 6:00 AM - 10:00 PM<br />
-                Holidays: 8:00 AM - 8:00 PM
+                Monday - Saturday: 5-11 am - 5-9 pm<br />
+                
               </p>
             </div>
           </div>
@@ -353,10 +355,10 @@ const HomePage = () => {
           <div className="footer-content">
             <div className="logo">
               <Dumbbell className="logo-icon" />
-              <span className="logo-text gradient-text">FITPRO</span>
+              <span className="logo-text gradient-text">FOCUS</span>
             </div>
             <p className="footer-text">
-              © 2024 FITPRO. All rights reserved. Transform your life today.
+              © 2024 FOCUS. All rights reserved. Transform your life today.
             </p>
           </div>
         </div>
