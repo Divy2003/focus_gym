@@ -1,5 +1,7 @@
 /* index.css - CSS Variables and Styles */
-
+body{
+  margin: 0;
+}
 :root {
   /* Colors */
   --primary-red: #ef4444;

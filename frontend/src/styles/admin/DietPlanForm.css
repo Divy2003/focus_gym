@@ -1,0 +1,56 @@
+
+.diet-plan-form-container {
+    max-width: 800px;
+    margin: auto;
+}
+
+.diet-plan-form-container h1 {
+    color: var(--accent-color);
+    margin-bottom: 2rem;
+}
+
+.meal-form-section {
+    background-color: var(--secondary-bg);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.meal-form-section > input {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+.item-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.meal-form-section button,
+.diet-plan-form-container button {
+    background-color: var(--accent-color);
+    color: var(--primary-text);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.form-actions button[type="submit"] {
+    background-color: var(--accent-color);
+}
+
+.form-actions button[type="button"] {
+    background-color: #555;
+}

@@ -1,0 +1,44 @@
+
+.members-page-container {
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.add-member-btn {
+    background-color: var(--accent-color);
+    color: var(--primary-text);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.add-member-btn:hover {
+    background-color: #0088cc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .add-member-btn {
+        margin-top: 1rem;
+        width: 100%;
+    }
+}

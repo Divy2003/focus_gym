@@ -1,0 +1,100 @@
+
+:root {
+  --primary-bg: #1a1a1a;
+  --secondary-bg: #2c2c2c;
+  --primary-text: #ffffff;
+  --secondary-text: #a0a0a0;
+  --accent-color: #00aaff;
+  --error-color: #ff4d4d;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+}
+
+.login-box {
+  background-color: var(--secondary-bg);
+  padding: 2rem 3rem;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  color: var(--accent-color);
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #444;
+  border-radius: 5px;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  font-size: 1rem;
+}
+
+.input-group input::placeholder {
+  color: #666;
+}
+
+button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 5px;
+  background-color: var(--accent-color);
+  color: var(--primary-text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0088cc;
+}
+
+.error-message {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-box {
+    padding: 1.5rem 1rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+}

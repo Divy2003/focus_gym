@@ -1,0 +1,30 @@
+
+.diets-page-container {
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.add-diet-btn {
+    background-color: var(--accent-color);
+    color: var(--primary-text);
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.add-diet-btn:hover {
+    background-color: #0088cc;
+}
