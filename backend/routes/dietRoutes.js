@@ -21,8 +21,13 @@ const dietPlanValidation = [
     .withMessage('Invalid target audience'),
   body('meals').isArray().withMessage('Meals must be an array'),
   body('meals.*.name').trim().notEmpty().withMessage('Meal name is required'),
-  body('meals.*.time').trim().notEmpty().withMessage('Meal time is required'),
-  body('meals.*.items').isArray().withMessage('Meal items must be an array')
+ 
+  body('meals.*.items').isArray().withMessage('Meal items must be an array'),
+  body('meals.*.items.*.food').trim().notEmpty().withMessage('Food item name is required'),
+  body('meals.*.items.*.quantity').trim().notEmpty().withMessage('Food quantity is required'),
+  body('meals.*.items.*.calories').isNumeric().withMessage('Calories must be a number'),
+  body('meals.*.items.*.protein').optional().isNumeric().withMessage('Protein must be a number'),
+  body('meals.*.items.*.ingredients').optional().trim()
 ];
 
 // Diet plan CRUD routes

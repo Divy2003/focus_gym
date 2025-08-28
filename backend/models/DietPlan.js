@@ -19,16 +19,38 @@ const dietPlanSchema = new mongoose.Schema({
     },
     time: {
       type: String,
-      required: true
+      
     },
     items: [{
-      food: String,
-      quantity: String,
-      calories: Number
+      food: {
+        type: String,
+        required: true
+      },
+      ingredients: {
+        type: String,
+        default: ''
+      },
+      quantity: {
+        type: String,
+        required: true
+      },
+      calories: {
+        type: Number,
+        required: true,
+        default: 0
+      },
+      protein: {
+        type: Number,
+        default: 0
+      }
     }],
     instructions: String
   }],
   totalCalories: {
+    type: Number,
+    default: 0
+  },
+  totalProtein: {
     type: Number,
     default: 0
   },
@@ -56,6 +78,27 @@ const dietPlanSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Pre-save middleware to calculate totals
+dietPlanSchema.pre('save', function(next) {
+  let totalCalories = 0;
+  let totalProtein = 0;
+  
+  if (this.meals && this.meals.length > 0) {
+    this.meals.forEach(meal => {
+      if (meal.items && meal.items.length > 0) {
+        meal.items.forEach(item => {
+          totalCalories += item.calories || 0;
+          totalProtein += item.protein || 0;
+        });
+      }
+    });
+  }
+  
+  this.totalCalories = totalCalories;
+  this.totalProtein = Math.round(totalProtein * 10) / 10;
+  next();
 });
 
 module.exports = mongoose.model('DietPlan', dietPlanSchema);

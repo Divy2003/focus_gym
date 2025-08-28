@@ -41,11 +41,27 @@ const generateDietPlanPDF = async (dietPlan) => {
     // Convert to plain object to avoid prototype issues
     const plainDietPlan = JSON.parse(JSON.stringify(dietPlan));
     
+    // Calculate totals (RESTORED from working version)
+    let totalCalories = 0;
+    let totalProtein = 0;
+    
+    if (plainDietPlan.meals) {
+      plainDietPlan.meals.forEach(meal => {
+        if (meal.items) {
+          meal.items.forEach(item => {
+            totalCalories += item.calories || 0;
+            totalProtein += item.protein || 0;
+          });
+        }
+      });
+    }
+    
     const templateData = {
       title: plainDietPlan.title || 'Diet Plan',
       targetAudience: (plainDietPlan.targetAudience || 'general').replace('_', ' ').toUpperCase(),
       duration: plainDietPlan.duration || '1 week',
-      totalCalories: plainDietPlan.totalCalories || 0,
+      totalCalories: totalCalories, // Use calculated value, not from DB
+      totalProtein: Math.round(totalProtein * 10) / 10, // RESTORED: Template needs this
       meals: plainDietPlan.meals || [],
       notes: plainDietPlan.notes || '',
       generatedDate: new Date().toLocaleDateString('en-IN')
@@ -62,10 +78,10 @@ const generateDietPlanPDF = async (dietPlan) => {
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
+        top: '15px',
+        right: '15px',
+        bottom: '15px',
+        left: '15px'
       }
     });
     
@@ -119,18 +135,21 @@ const createDietPlan = async (req, res) => {
       createdBy: req.admin.adminId
     };
 
-    // Calculate total calories
+    // Calculate total calories and protein (RESTORED from working version)
     let totalCalories = 0;
+    let totalProtein = 0;
     if (dietPlanData.meals) {
       dietPlanData.meals.forEach(meal => {
         if (meal.items) {
           meal.items.forEach(item => {
             totalCalories += item.calories || 0;
+            totalProtein += item.protein || 0;
           });
         }
       });
     }
     dietPlanData.totalCalories = totalCalories;
+    dietPlanData.totalProtein = Math.round(totalProtein * 10) / 10;
 
     const dietPlan = new DietPlan(dietPlanData);
     await dietPlan.save();
@@ -252,17 +271,20 @@ const updateDietPlan = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Calculate total calories if meals are updated
+    // Calculate total calories and protein if meals are updated (RESTORED from working version)
     if (updateData.meals) {
       let totalCalories = 0;
+      let totalProtein = 0;
       updateData.meals.forEach(meal => {
         if (meal.items) {
           meal.items.forEach(item => {
             totalCalories += item.calories || 0;
+            totalProtein += item.protein || 0;
           });
         }
       });
       updateData.totalCalories = totalCalories;
+      updateData.totalProtein = Math.round(totalProtein * 10) / 10;
     }
 
     const dietPlan = await DietPlan.findByIdAndUpdate(id, updateData, { new: true });
