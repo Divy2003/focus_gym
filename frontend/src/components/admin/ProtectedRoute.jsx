@@ -2,7 +2,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
-import { selectCurrentToken } from '../../features/auth/authSlice';
+import { selectCurrentToken } from '../../redux/slices/authSlice';
 
 const ProtectedRoute = () => {
   const token = useSelector(selectCurrentToken);

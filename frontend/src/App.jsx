@@ -5,14 +5,16 @@ import Members from './pages/admin/Members';
 import Diets from './pages/admin/Diets';
 import DietPlanForm from './pages/admin/DietPlanForm';
 import Login from './pages/admin/Login';
+import HomePage from './pages/HomePage';
 import ProtectedRoute from './components/admin/ProtectedRoute';
+import Registration from './pages/Registration';
 
 function App() {
   return (
     <Routes>
       {/* Redirect root to admin dashboard */}
-      <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-
+      <Route path="/" element={<HomePage />} />
+      <Route path="/registration" element={<Registration />} />
       {/* Admin Routes */}
       <Route path="/admin/login" element={<Login />} />
       

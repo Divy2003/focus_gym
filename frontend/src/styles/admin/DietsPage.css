@@ -1,30 +1,206 @@
+/* DietsPage.css */
 
 .diets-page-container {
-    width: 100%;
+  padding: var(--spacing-lg);
 }
 
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+.diets-page-content {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
 }
 
-.page-header h1 {
-    color: var(--accent-color);
-    margin: 0;
+.diets-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.header-title h1 {
+  font-size: var(--text-3xl);
+  font-weight: bold;
+  color: var(--white);
+  margin-bottom: var(--spacing-xs);
+}
+
+.header-title p {
+  color: var(--gray-400);
 }
 
 .add-diet-btn {
-    background-color: var(--accent-color);
-    color: var(--primary-text);
-    text-decoration: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: background-color 0.3s ease;
+  background: var(--gradient-primary);
+  color: var(--white);
+  padding: var(--spacing-sm-2) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: var(--transition-normal);
+  text-decoration: none;
 }
 
 .add-diet-btn:hover {
-    background-color: #0088cc;
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+.filters-container {
+  background-color: var(--gray-800);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.filters-flex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.search-input-container {
+  position: relative;
+}
+
+.search-input-container .icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+.search-input {
+  background-color: var(--gray-700);
+  border: 1px solid var(--gray-600);
+  color: var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: var(--transition-fast);
+  padding-left: 36px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-red);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.diets-table-container {
+  background-color: var(--gray-800);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.diets-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diets-table thead {
+  background-color: var(--gray-700);
+}
+
+.diets-table th,
+.diets-table td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--gray-700);
+}
+
+.diets-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diets-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.diets-table tbody tr:hover {
+  background-color: var(--gray-700);
+}
+
+.diets-table .title {
+  font-weight: 500;
+  color: var(--white);
+}
+
+.diets-table .audience {
+  color: var(--gray-300);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.action-buttons .icon-btn {
+  padding: var(--spacing-sm);
+  border-radius: 50%;
+  transition: background-color var(--transition-fast);
+  color: var(--gray-300);
+}
+
+.action-buttons .icon-btn:hover {
+    background-color: var(--gray-600);
+    color: var(--white);
+}
+
+.pagination-container {
+  background-color: var(--gray-700);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--gray-600);
+}
+
+.pagination-info {
+  font-size: var(--text-sm);
+  color: var(--gray-400);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.pagination-controls .page-btn {
+  background-color: var(--gray-800);
+  border: 1px solid var(--gray-600);
+  color: var(--gray-300);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.pagination-controls .page-btn:hover:not(:disabled) {
+  background-color: var(--gray-600);
+}
+
+.pagination-controls .page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-controls .page-indicator {
+  font-size: var(--text-sm);
+  color: var(--gray-400);
 }
