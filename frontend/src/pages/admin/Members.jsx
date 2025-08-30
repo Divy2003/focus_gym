@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { 
   useGetMembersQuery, 
   useAddMemberMutation, 
@@ -38,7 +39,14 @@ const MembersPage = () => {
   const members = membersData?.members || [];
   const pagination = membersData?.pagination || {};
 
-  const [memberForm, setMemberForm] = useState({ name: '', mobile: '', month: 1, fees: 0, description: '' });
+  const [memberForm, setMemberForm] = useState({ 
+    name: '', 
+    mobile: '', 
+    month: 1, 
+    fees: 0, 
+    description: '',
+    status: 'pending' 
+  });
   const [messageForm, setMessageForm] = useState({ message: '', includeLink: false });
 
   useEffect(() => {
@@ -48,10 +56,18 @@ const MembersPage = () => {
         mobile: editingMember.mobile,
         month: editingMember.month,
         fees: editingMember.fees,
-        description: editingMember.description || ''
+        description: editingMember.description || '',
+        status: editingMember.status || 'pending'
       });
     } else {
-      setMemberForm({ name: '', mobile: '', month: 1, fees: 0, description: '' });
+      setMemberForm({ 
+        name: '', 
+        mobile: '', 
+        month: 1, 
+        fees: 0, 
+        description: '',
+        status: 'pending' 
+      });
     }
   }, [showEditModal, editingMember]);
 
@@ -63,7 +79,12 @@ const MembersPage = () => {
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      await addMember(memberForm).unwrap();
+      // Set default status based on fees
+      const memberData = {
+        ...memberForm,
+        status: memberForm.fees > 0 ? 'approved' : 'pending'
+      };
+      await addMember(memberData).unwrap();
       dispatch(setShowAddModal(false));
       refetch();
     } catch (err) {
@@ -74,7 +95,19 @@ const MembersPage = () => {
   const handleUpdateMember = async (e) => {
     e.preventDefault();
     try {
-      await updateMember({ id: editingMember._id, ...memberForm }).unwrap();
+      // Create update data without status if it's a fee update for a pending member
+      const updateData = { ...memberForm };
+      
+      // If the member was pending and we're updating fees, don't include status in the update
+      if (editingMember?.status === 'pending' && memberForm.fees > 0) {
+        delete updateData.status; // Let the backend handle status update based on fees
+      }
+      
+      await updateMember({ 
+        id: editingMember._id, 
+        ...updateData 
+      }).unwrap();
+      
       dispatch(setShowEditModal(false));
       refetch();
     } catch (err) {
@@ -115,20 +148,21 @@ const MembersPage = () => {
     }
   };
 
-  const getStatusBadge = (status, endingDate) => {
-    const isExpired = new Date(endingDate) < new Date();
-    const actualStatus = isExpired ? 'expired' : status;
+  const getStatusBadge = (status, member) => {
     const statusConfig = {
-      approved: { class: 'approved', icon: CheckCircle },
-      pending: { class: 'pending', icon: Clock },
-      expired: { class: 'expired', icon: XCircle }
+      approved: { class: 'approved', icon: CheckCircle, label: 'Active' },
+      pending: { class: 'pending', icon: Clock, label: 'Pending' },
+      expiring: { class: 'expiring', icon: Clock, label: `Expiring in ${member?.daysUntilExpiry || 'a few'} days` },
+      expired: { class: 'expired', icon: XCircle, label: 'Expired' }
     };
-    const config = statusConfig[actualStatus];
+    
+    const config = statusConfig[status] || statusConfig.pending;
     const StatusIcon = config.icon;
+    
     return (
-      <span className={`status-badge ${config.class}`}>
+      <span className={`status-badge ${config.class}`} title={config.label}>
         <StatusIcon size={12} />
-        <span>{actualStatus.charAt(0).toUpperCase() + actualStatus.slice(1)}</span>
+        <span>{config.label}</span>
       </span>
     );
   };
@@ -158,15 +192,17 @@ const MembersPage = () => {
             <h1>Members</h1>
             <p>Manage your gym members and memberships</p>
           </div>
-          <button onClick={() => dispatch(setShowAddModal(true))} className="add-member-btn">
+          <Link to="/Registration" style={{ textDecoration: 'none' }}>
+          <button  className="add-member-btn">
             <Plus size={20} />
             Add Member
           </button>
+          </Link>
         </div>
 
         <div className="filters-container">
           <div className="filters-flex">
-            <div className="filter-controls">
+           
               <div className="search-input-container">
                 <Search size={20} className="icon" />
                 <input
@@ -185,9 +221,10 @@ const MembersPage = () => {
                 <option value="">All Status</option>
                 <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
+                <option value="expiring">Expiring Soon</option>
                 <option value="expired">Expired</option>
               </select>
-            </div>
+            
             {selectedMembers.length > 0 && (
               <div className="bulk-actions">
                 <button onClick={() => dispatch(setShowMessageModal(true))} className="action-btn message-btn">
@@ -239,7 +276,7 @@ const MembersPage = () => {
                         <div className="dates">{new Date(member.joiningDate).toLocaleDateString()} - {new Date(member.endingDate).toLocaleDateString()}</div>
                       </div>
                     </td>
-                    <td>{getStatusBadge(member.status, member.endingDate)}</td>
+                    <td>{getStatusBadge(member.status, member)}</td>
                     <td><div className="fees"><IndianRupee size={16} />{member.fees.toLocaleString()}</div></td>
                     <td>
                       <div className="action-buttons">
@@ -266,8 +303,9 @@ const MembersPage = () => {
       </div>
 
       <MemberModal isOpen={showAddModal || showEditModal} onClose={() => dispatch(showAddModal ? setShowAddModal(false) : setShowEditModal(false))} onSubmit={showAddModal ? handleAddMember : handleUpdateMember} title={showAddModal ? 'Add New Member' : 'Update Member'} isLoading={isAdding || isUpdating}>
-        <div className="form-group">
-          <label htmlFor="name">Full Name</label>
+        <div className="form-scroll-container">
+          <div className="form-group">
+            <label htmlFor="name">Full Name</label>
           <input type="text" id="name" name="name" value={memberForm.name} onChange={handleFormChange} required />
         </div>
         <div className="form-group">
@@ -282,9 +320,31 @@ const MembersPage = () => {
           <label htmlFor="fees">Fees</label>
           <input type="number" id="fees" name="fees" value={memberForm.fees} onChange={handleFormChange} min="0" required />
         </div>
+        {showEditModal && (
+          <div className="form-group">
+            <label htmlFor="status">Status</label>
+            <select 
+              id="status" 
+              name="status" 
+              value={memberForm.status} 
+              onChange={handleFormChange}
+              className="status-select"
+              disabled={memberForm.status === 'pending'}
+            >
+              <option value="approved">Active</option>
+              <option value="expired">Expired</option>
+            </select>
+            {memberForm.status === 'pending' && (
+              <div className="status-help-text">
+                Status will be automatically updated to 'Active' when fees are paid.
+              </div>
+            )}
+          </div>
+        )}
         <div className="form-group">
           <label htmlFor="description">Description (Optional)</label>
           <textarea id="description" name="description" value={memberForm.description} onChange={handleFormChange}></textarea>
+        </div>
         </div>
         <div className="modal-footer">
           <button type="submit" className="submit-btn" disabled={isAdding || isUpdating}>

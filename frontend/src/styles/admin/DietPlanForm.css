@@ -130,7 +130,28 @@
 .meal-items-table .action-cell {
   width: 50px;
 }
-
+.mealremove-header {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+.remove-btn-meal {
+  width: auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: var(--transition-normal);
+  background-color: transparent;
+  color: var(--primary-red);
+  
+}
+.remove-btn-meal:hover {
+  background-color: var(--gray-600);
+  color: var(--white);
+}
 .add-btn,
 .remove-btn {
   display: inline-flex;

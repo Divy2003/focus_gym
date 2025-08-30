@@ -48,18 +48,35 @@ const getMembers = async (req, res) => {
     } = req.query;
 
     const query = { isActive: true };
-
-    // Search functionality
+    const now = new Date();
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(now.getDate() + 7);
+    
+    // Search by name or mobile
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { mobile: { $regex: search, $options: 'i' } }
       ];
     }
-
-    // Status filter
+    
+    // Filter by status
     if (status) {
-      query.status = status;
+      if (status === 'expired') {
+        query.endingDate = { $lt: now };
+      } else if (status === 'expiring') {
+        // Members expiring in the next 7 days
+        query.endingDate = { 
+          $gte: now, 
+          $lte: sevenDaysFromNow 
+        };
+      } else if (status === 'approved' || status === 'active') {
+        // Active members (not expired, not expiring soon)
+        query.endingDate = { $gt: sevenDaysFromNow };
+        query.status = 'approved';
+      } else {
+        query.status = status;
+      }
     }
 
     const sortOptions = {};
@@ -104,15 +121,38 @@ const updateMember = async (req, res) => {
     }
 
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
 
-    const member = await Member.findByIdAndUpdate(id, updateData, { new: true });
-    if (!member) {
+    // Find the existing member first
+    const existingMember = await Member.findById(id);
+    if (!existingMember) {
       return res.status(404).json({
         success: false,
         message: 'Member not found'
       });
     }
+
+    // Handle fee updates for pending members
+    if (existingMember.status === 'pending' && updateData.fees > 0) {
+      // If fees are being added to a pending member, automatically approve
+      updateData.status = 'approved';
+    }
+    // If status is being explicitly set to pending, block it
+    else if (updateData.status === 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot set status to pending. Only approved or expired status is allowed.'
+      });
+    }
+    // Only allow changing between 'approved' and 'expired' if status is provided
+    else if (updateData.status && !['approved', 'expired'].includes(updateData.status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Only approved or expired status is allowed.'
+      });
+    }
+
+    const member = await Member.findByIdAndUpdate(id, updateData, { new: true });
 
     res.status(200).json({
       success: true,

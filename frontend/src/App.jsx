@@ -20,6 +20,7 @@ function App() {
       
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="members" element={<Members />} />
           <Route path="diets" element={<Diets />} />

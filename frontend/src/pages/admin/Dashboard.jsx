@@ -25,6 +25,7 @@ const Dashboard = () => {
   const { data: expiringData } = useGetExpiringMembersQuery(7);
 
   const dashboardData = analytics?.analytics || {};
+  
   const expiringMembers = expiringData?.expiringMembers || [];
 
   useEffect(() => {
@@ -122,7 +123,7 @@ const Dashboard = () => {
           <StatCard icon={UserX} title="Pending Approvals" value={dashboardData.pendingMembers || 0} color="yellow" />
           <StatCard icon={Clock} title="Expiring Soon" value={dashboardData.expiringMembersCount || 0} subtext="Next 7 days" color="orange" />
           <StatCard icon={Calendar} title="New This Month" value={dashboardData.newMembersThisMonth || 0} color="indigo" />
-          <StatCard icon={UserMinus} title="Expired Members" value={dashboardData.expiredMembers || 0} color="red" />
+          <StatCard icon={UserMinus} title="Expired Members" value={dashboardData.statusDistribution.expired || 0} color="red" />
         </div>
 
         <div className="charts-grid">
@@ -148,7 +149,7 @@ const Dashboard = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'var(--gray-800)', borderColor: 'var(--gray-700)' }} />
+                <Tooltip contentStyle={{ borderColor: 'var(--gray-700)'}} />
               </PieChart>
             </ResponsiveContainer>
           </div>

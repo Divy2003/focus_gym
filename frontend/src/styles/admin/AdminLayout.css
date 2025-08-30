@@ -80,7 +80,8 @@
 
 .main-content {
   flex-grow: 1;
-  padding: 2rem;
+  background-color: var(--dark-bg);
+  
   overflow-y: auto;
 }
 
@@ -99,17 +100,13 @@
     left: 0;
   }
 
-  .main-content {
-    padding: 1.5rem;
-  }
+  
   
   /* You would need a button in the header to toggle the .open class */
 }
 
 @media (max-width: 480px) {
-  .main-content {
-    padding: 1rem;
-  }
+  
   .sidebar-header h2 {
     font-size: 1.2rem;
   }
@@ -118,9 +115,5 @@
   }
 }
 
-@media (max-width: 280px) {
-    .main-content {
-        padding: 0.5rem;
-    }
-}
+
 

@@ -9,7 +9,10 @@ const DietPlanForm = () => {
   const navigate = useNavigate();
   const isEditing = !!id;
 
-  const { data: existingPlan, isLoading: isLoadingPlan } = useGetDietPlanQuery(id, { skip: !isEditing });
+  const { data: existingPlan, isLoading: isLoadingPlan, error } = useGetDietPlanQuery(id, { 
+    skip: !isEditing,
+    refetchOnMountOrArgChange: true
+  });
   const [createDietPlan, { isLoading: isCreating }] = useCreateDietPlanMutation();
   const [updateDietPlan, { isLoading: isUpdating }] = useUpdateDietPlanMutation();
 
@@ -18,12 +21,31 @@ const DietPlanForm = () => {
     targetAudience: 'general',
     duration: '',
     notes: '',
-    meals: [],
+    meals: [] // Initialize with empty array
   });
+  
+  // Add a loading state to prevent rendering before data is ready
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (isEditing && existingPlan) {
-      setFormData(existingPlan);
+    if (isEditing) {
+      if (existingPlan?.dietPlan) {
+        const { success, ...dietPlanData } = existingPlan;
+        console.log('Setting form data with:', dietPlanData.dietPlan);
+        setFormData({
+          title: dietPlanData.dietPlan.title || '',
+          targetAudience: dietPlanData.dietPlan.targetAudience || 'general',
+          duration: dietPlanData.dietPlan.duration || '',
+          notes: dietPlanData.dietPlan.notes || '',
+          meals: Array.isArray(dietPlanData.dietPlan.meals) ? dietPlanData.dietPlan.meals : []
+        });
+        setIsInitialized(true);
+      } else if (error) {
+        console.error('Error loading diet plan:', error);
+      }
+    } else {
+      // For new form, mark as initialized immediately
+      setIsInitialized(true);
     }
   }, [isEditing, existingPlan]);
 
@@ -34,46 +56,112 @@ const DietPlanForm = () => {
 
   const handleMealChange = (mealIndex, e) => {
     const { name, value } = e.target;
-    const updatedMeals = [...formData.meals];
-    updatedMeals[mealIndex] = { ...updatedMeals[mealIndex], [name]: value };
-    setFormData(prev => ({ ...prev, meals: updatedMeals }));
+    setFormData(prev => ({
+      ...prev,
+      meals: prev.meals.map((meal, idx) => 
+        idx === mealIndex ? { ...meal, [name]: value } : meal
+      )
+    }));
   };
 
   const handleItemChange = (mealIndex, itemIndex, e) => {
     const { name, value } = e.target;
-    const updatedMeals = [...formData.meals];
-    updatedMeals[mealIndex].items[itemIndex] = { ...updatedMeals[mealIndex].items[itemIndex], [name]: value };
-    setFormData(prev => ({ ...prev, meals: updatedMeals }));
+    setFormData(prev => ({
+      ...prev,
+      meals: prev.meals.map((meal, mIdx) => 
+        mIdx === mealIndex 
+          ? {
+              ...meal,
+              items: meal.items.map((item, iIdx) => 
+                iIdx === itemIndex ? { ...item, [name]: value } : item
+              )
+            }
+          : meal
+      )
+    }));
   };
 
   const addMeal = () => {
-    setFormData(prev => ({ ...prev, meals: [...prev.meals, { name: '', time: '', items: [] }] }));
+    setFormData(prev => ({
+      ...prev,
+      meals: [...prev.meals, { name: '', time: '', items: [] }]
+    }));
   };
 
   const removeMeal = (mealIndex) => {
-    const updatedMeals = formData.meals.filter((_, index) => index !== mealIndex);
-    setFormData(prev => ({ ...prev, meals: updatedMeals }));
+    setFormData(prev => ({
+      ...prev,
+      meals: prev.meals.filter((_, index) => index !== mealIndex)
+    }));
   };
 
   const addItemToMeal = (mealIndex) => {
-    const updatedMeals = [...formData.meals];
-    updatedMeals[mealIndex].items.push({ food: '', quantity: '', calories: 0, protein: 0 });
-    setFormData(prev => ({ ...prev, meals: updatedMeals }));
+    setFormData(prev => ({
+      ...prev,
+      meals: prev.meals.map((meal, idx) => 
+        idx === mealIndex 
+          ? {
+              ...meal,
+              items: [...meal.items, { food: '', quantity: '', calories: 0, protein: 0 }]
+            }
+          : meal
+      )
+    }));
   };
 
   const removeItemFromMeal = (mealIndex, itemIndex) => {
-    const updatedMeals = [...formData.meals];
-    updatedMeals[mealIndex].items = updatedMeals[mealIndex].items.filter((_, index) => index !== itemIndex);
-    setFormData(prev => ({ ...prev, meals: updatedMeals }));
+    setFormData(prev => ({
+      ...prev,
+      meals: prev.meals.map((meal, mIdx) => 
+        mIdx === mealIndex 
+          ? {
+              ...meal,
+              items: meal.items.filter((_, iIdx) => iIdx !== itemIndex)
+            }
+          : meal
+      )
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare the data in the format expected by the API
+      const submitData = {
+        title: formData.title,
+        targetAudience: formData.targetAudience,
+        duration: formData.duration,
+        notes: formData.notes,
+        meals: formData.meals.map(meal => ({
+          name: meal.name,
+          time: meal.time,
+          items: meal.items.map(item => ({
+            food: item.food,
+            quantity: item.quantity,
+            calories: Number(item.calories) || 0,
+            protein: Number(item.protein) || 0
+          }))
+        }))
+      };
+
+      console.log('Submitting data:', {
+        isEditing,
+        id: formData._id,
+        submitData
+      });
+
       if (isEditing) {
-        await updateDietPlan({ id, ...formData }).unwrap();
+        if (!id) {
+          throw new Error('Missing diet plan ID for update');
+        }
+        // Send the update with the ID in the URL and data in the body
+        const result = await updateDietPlan({ 
+          id, // Use the ID from useParams
+          ...submitData
+        }).unwrap();
+        console.log('Update successful:', result);
       } else {
-        await createDietPlan(formData).unwrap();
+        await createDietPlan(submitData).unwrap();
       }
       navigate('/admin/diets');
     } catch (error) {
@@ -82,7 +170,7 @@ const DietPlanForm = () => {
     }
   };
 
-  if (isLoadingPlan) {
+  if (isLoadingPlan || (isEditing && !isInitialized)) {
     return <div className="diet-form-container"><Loader2 className="animate-spin" /></div>;
   }
 
@@ -121,6 +209,10 @@ const DietPlanForm = () => {
           <h2>Meals</h2>
           {formData.meals.map((meal, mealIndex) => (
             <div key={mealIndex} className="meal-card">
+              <div className="mealremove-header">
+              <button type="button" onClick={() => removeMeal(mealIndex)} className="remove-btn-meal"><Trash2 size={16} /></button>
+              </div>
+              
               <div className="meal-header">
                 <div className="form-grid">
                   <div className="form-group">
@@ -132,8 +224,7 @@ const DietPlanForm = () => {
                     <input type="text" name="time" value={meal.time} onChange={(e) => handleMealChange(mealIndex, e)} placeholder="8:00 AM" />
                   </div>
                 </div>
-                <button type="button" onClick={() => removeMeal(mealIndex)} className="remove-btn"><Trash2 size={16} /></button>
-              </div>
+                </div>
               <table className="meal-items-table">
                 <thead>
                   <tr>

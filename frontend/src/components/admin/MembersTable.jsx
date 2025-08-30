@@ -6,7 +6,19 @@ import SendMessageModal from './SendMessageModal';
 import { useDeleteMemberMutation, useBulkDeleteMembersMutation } from '../../features/members/membersApiSlice';
 import '../../styles/admin/MembersTable.css';
 
-const MembersTable = ({ members }) => {
+const MembersTable = (props) => {
+  const { members } = props;
+  
+  // Log component rendering and props
+  console.group('=== MembersTable Component ===');
+  console.log('Time:', new Date().toISOString());
+  console.log('Props:', props);
+  console.log('Members prop type:', typeof members);
+  console.log('Is members an array?', Array.isArray(members));
+  console.log('Members data:', members);
+  console.log('Members count:', members?.length || 0);
+  console.groupEnd();
+  
   if (!members) {
     return <p>No members found.</p>;
   }
@@ -48,6 +60,7 @@ const MembersTable = ({ members }) => {
     await deleteMember(selectedMember._id);
     setDeleteModalOpen(false);
   };
+  
 
   const handleBulkDelete = async () => {
     await bulkDeleteMembers(selectedMembers);
