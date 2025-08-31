@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useSendOtpMutation, useVerifyOtpMutation } from '../../features/auth/authApiSlice';
-import { setCredentials } from '../../features/auth/authSlice';
+import { loginSuccess } from '../../redux/slices/authSlice';
 import '../../styles/admin/Login.css';
 
 const Login = () => {
@@ -34,7 +34,7 @@ const Login = () => {
     setError('');
     try {
       const { token, admin } = await verifyOtp({ mobile, otp }).unwrap();
-      dispatch(setCredentials({ token, admin }));
+      dispatch(loginSuccess({ token, admin }));
       navigate('/admin/dashboard');
     } catch (err) {
       setError(err.data?.message || 'Invalid OTP');
