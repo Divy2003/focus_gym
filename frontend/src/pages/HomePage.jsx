@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, Dumbbell, Users, Trophy, Star, ArrowRight, Play, CheckCircle, Phone, Mail, MapPin, Clock, X as Close } from 'lucide-react';
 import '../styles/HomePage.css';
 import { Link } from 'react-router-dom';
+import logo from '../assets/logo.png';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,8 +112,7 @@ const HomePage = () => {
         <div className="nav-container">
           {/* Logo */}
           <a href="#" className="logo">
-            <Dumbbell className="logo-icon" />
-            <span className="logo-text gradient-text">FOCUS</span>
+            <img width={100} src={logo} alt="Logo" />
           </a>
           
           {/* Desktop Menu */}
