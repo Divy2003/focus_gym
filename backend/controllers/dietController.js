@@ -41,18 +41,35 @@ const generateDietPlanPDF = async (dietPlan) => {
     // Convert to plain object to avoid prototype issues
     const plainDietPlan = JSON.parse(JSON.stringify(dietPlan));
     
-    // Calculate totals (RESTORED from working version)
+    // Calculate totals with null checks
     let totalCalories = 0;
     let totalProtein = 0;
     
-    if (plainDietPlan.meals) {
-      plainDietPlan.meals.forEach(meal => {
-        if (meal.items) {
-          meal.items.forEach(item => {
-            totalCalories += item.calories || 0;
-            totalProtein += item.protein || 0;
-          });
-        }
+    if (plainDietPlan.meals && Array.isArray(plainDietPlan.meals)) {
+      plainDietPlan.meals = plainDietPlan.meals.map(meal => {
+        // Ensure meal has required properties
+        meal = meal || {};
+        meal.name = meal.name || 'Meal';
+        meal.time = meal.time || '';
+        meal.items = meal.items || [];
+        meal.instructions = meal.instructions || '';
+        
+        // Process items
+        meal.items = meal.items.map(item => ({
+          food: item.food || 'Food item',
+          ingredients: item.ingredients || '',
+          quantity: item.quantity || '',
+          calories: Number(item.calories) || 0,
+          protein: Number(item.protein) || 0
+        }));
+        
+        // Calculate totals
+        meal.items.forEach(item => {
+          totalCalories += item.calories || 0;
+          totalProtein += item.protein || 0;
+        });
+        
+        return meal;
       });
     }
     
@@ -60,8 +77,8 @@ const generateDietPlanPDF = async (dietPlan) => {
       title: plainDietPlan.title || 'Diet Plan',
       targetAudience: (plainDietPlan.targetAudience || 'general').replace('_', ' ').toUpperCase(),
       duration: plainDietPlan.duration || '1 week',
-      totalCalories: totalCalories, // Use calculated value, not from DB
-      totalProtein: Math.round(totalProtein * 10) / 10, // RESTORED: Template needs this
+      totalCalories: totalCalories,
+      totalProtein: Math.round(totalProtein * 10) / 10,
       meals: plainDietPlan.meals || [],
       notes: plainDietPlan.notes || '',
       generatedDate: new Date().toLocaleDateString('en-IN')
@@ -118,11 +135,41 @@ const generateDietPlanPDF = async (dietPlan) => {
   }
 };
 
+// Helper function to process diet plan data
+const processDietPlanData = (data) => {
+  // Ensure meals is an array
+  const meals = Array.isArray(data.meals) ? data.meals : [];
+  
+  // Process each meal
+  const processedMeals = meals.map(meal => ({
+    name: meal.name || 'Meal',
+    time: meal.time || '',
+    instructions: meal.instructions || '',
+    items: Array.isArray(meal.items) ? meal.items.map(item => ({
+      food: item.food || 'Food item',
+      quantity: item.quantity || '',
+      calories: Number(item.calories) || 0,
+      protein: Number(item.protein) || 0,
+      ingredients: item.ingredients || ''
+    })) : []
+  }));
+
+  return {
+    title: data.title || 'Untitled Diet Plan',
+    targetAudience: data.targetAudience || 'general',
+    duration: data.duration || '1 week',
+    notes: data.notes || '',
+    meals: processedMeals,
+    createdBy: data.createdBy || req.user?.id
+  };
+};
+
 // Create diet plan
 const createDietPlan = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation errors',
@@ -130,28 +177,13 @@ const createDietPlan = async (req, res) => {
       });
     }
 
-    const dietPlanData = {
+    // Process the request data with defaults
+    const processedData = processDietPlanData({
       ...req.body,
       createdBy: req.admin.adminId
-    };
+    });
 
-    // Calculate total calories and protein (RESTORED from working version)
-    let totalCalories = 0;
-    let totalProtein = 0;
-    if (dietPlanData.meals) {
-      dietPlanData.meals.forEach(meal => {
-        if (meal.items) {
-          meal.items.forEach(item => {
-            totalCalories += item.calories || 0;
-            totalProtein += item.protein || 0;
-          });
-        }
-      });
-    }
-    dietPlanData.totalCalories = totalCalories;
-    dietPlanData.totalProtein = Math.round(totalProtein * 10) / 10;
-
-    const dietPlan = new DietPlan(dietPlanData);
+    const dietPlan = new DietPlan(processedData);
     await dietPlan.save();
 
     // Generate PDF
@@ -261,6 +293,7 @@ const updateDietPlan = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation errors',

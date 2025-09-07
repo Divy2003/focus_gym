@@ -16,18 +16,56 @@ const router = express.Router();
 router.use(authMiddleware);
 
 const dietPlanValidation = [
-  body('title').trim().notEmpty().withMessage('Title is required'),
-  body('targetAudience').isIn(['weight_loss', 'weight_gain', 'muscle_building', 'maintenance', 'general'])
-    .withMessage('Invalid target audience'),
-  body('meals').isArray().withMessage('Meals must be an array'),
-  body('meals.*.name').trim().notEmpty().withMessage('Meal name is required'),
- 
-  body('meals.*.items').isArray().withMessage('Meal items must be an array'),
-  body('meals.*.items.*.food').trim().notEmpty().withMessage('Food item name is required'),
-  body('meals.*.items.*.quantity').trim().notEmpty().withMessage('Food quantity is required'),
-  body('meals.*.items.*.calories').isNumeric().withMessage('Calories must be a number'),
-  body('meals.*.items.*.protein').optional().isNumeric().withMessage('Protein must be a number'),
-  body('meals.*.items.*.ingredients').optional().trim()
+  body('title').optional().trim().default('Untitled Diet Plan'),
+  body('targetAudience')
+    .optional()
+    .isIn(['weight_loss', 'weight_gain', 'muscle_building', 'maintenance', 'general'])
+    .withMessage('Invalid target audience')
+    .default('general'),
+  body('meals')
+    .optional()
+    .isArray()
+    .withMessage('Meals must be an array')
+    .default([]),
+  body('meals.*.name')
+    .optional()
+    .trim()
+    .default('Meal'),
+  body('meals.*.time')
+    .optional()
+    .trim()
+    .default(''),
+  body('meals.*.items')
+    .optional()
+    .isArray()
+    .withMessage('Meal items must be an array')
+    .default([]),
+  body('meals.*.items.*.food')
+    .optional()
+    .trim()
+    .default('Food item'),
+  body('meals.*.items.*.quantity')
+    .optional()
+    .trim()
+    .default(''),
+  body('meals.*.items.*.calories')
+    .optional()
+    .isNumeric()
+    .withMessage('Calories must be a number')
+    .default(0),
+  body('meals.*.items.*.protein')
+    .optional()
+    .isNumeric()
+    .withMessage('Protein must be a number')
+    .default(0),
+  body('meals.*.items.*.ingredients')
+    .optional()
+    .trim()
+    .default(''),
+  body('meals.*.instructions')
+    .optional()
+    .trim()
+    .default('')
 ];
 
 // Diet plan CRUD routes

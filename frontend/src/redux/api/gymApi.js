@@ -10,11 +10,26 @@ const baseQuery = fetchBaseQuery({
     }
     return headers;
   },
+  credentials: 'include',
 });
+
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions);
+  
+  if (result.error && result.error.status === 401) {
+    // Clear auth state
+    api.dispatch({ type: 'auth/logout' });
+    // Optionally redirect to login page
+    window.location.href = '/admin/login';
+    return result;
+  }
+  
+  return result;
+};
 
 export const gymApi = createApi({
   reducerPath: 'gymApi',
-  baseQuery,
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['Auth', 'Member', 'DietPlan', 'Analytics'],
   endpoints: (builder) => ({
     // Auth endpoints

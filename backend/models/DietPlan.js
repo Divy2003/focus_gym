@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const dietPlanSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    default: 'Untitled Diet Plan',
     trim: true
   },
   targetAudience: {
@@ -15,16 +15,16 @@ const dietPlanSchema = new mongoose.Schema({
   meals: [{
     name: {
       type: String,
-      required: true
+      default: 'Meal'
     },
     time: {
       type: String,
-      
+      default: ''
     },
     items: [{
       food: {
         type: String,
-        required: true
+        default: 'Food item'
       },
       ingredients: {
         type: String,
@@ -32,11 +32,10 @@ const dietPlanSchema = new mongoose.Schema({
       },
       quantity: {
         type: String,
-        required: true
+        default: ''
       },
       calories: {
         type: Number,
-        required: true,
         default: 0
       },
       protein: {
@@ -44,7 +43,10 @@ const dietPlanSchema = new mongoose.Schema({
         default: 0
       }
     }],
-    instructions: String
+    instructions: {
+      type: String,
+      default: ''
+    }
   }],
   totalCalories: {
     type: Number,

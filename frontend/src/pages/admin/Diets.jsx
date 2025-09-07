@@ -36,6 +36,30 @@ const DietsPage = () => {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
+
+  if (error) {
+    if (error.status === 401) {
+      // The baseQueryWithReauth will handle the redirect
+      return (
+        <div className="error-message">
+          Your session has expired. Redirecting to login...
+        </div>
+      );
+    }
+    return (
+      <div className="error-message">
+        Error loading diet plans: {error.data?.message || error.message}
+      </div>
+    );
+  }
+
   return (
     <div className="diets-page-container">
       <div className="diets-page-content">
