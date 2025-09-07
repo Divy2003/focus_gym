@@ -79,7 +79,7 @@
 
 .main-content {
   flex-grow: 1;
-  background-color: var(--primary-bg);
+  background-color: var(--dark-bg);
   padding: 1rem;
   overflow-y: auto;
 }

@@ -26,19 +26,28 @@
 }
 
 .diet-form-header h1 {
-  font-size: var(--text-3xl);
-  font-weight: bold;
+  font-size: var(--text-2xl);
+  font-weight: 600;
   color: var(--white);
+  margin: 0 0 var(--spacing-sm) 0;
+  line-height: 1.2;
 }
-.food-input{
+
+.food-input {
   width: 8rem;
+  font-size: var(--text-sm);
 }
-.ingredients-input{
+
+.ingredients-input {
   width: 16rem;
+  font-size: var(--text-sm);
 }
+
 .diet-form-header p {
   color: var(--gray-400);
-  margin-top: var(--spacing-xs);
+  margin: var(--spacing-xs) 0 0 0;
+  font-size: var(--text-base);
+  line-height: 1.5;
 }
 
 .diet-form .form-section {
@@ -46,8 +55,9 @@
 }
 
 .form-section h2 {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 600;
+  margin: 0 0 var(--spacing-md) 0;
   color: var(--white);
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-sm);
@@ -57,13 +67,13 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 @media (min-width: 640px) {
   .form-grid {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
   }
 }
 
@@ -87,7 +97,7 @@
   border-radius: var(--radius-lg);
   padding: 0.75rem 1rem;
   transition: var(--transition-fast);
-  font-size: 1rem;
+  font-size: var(--text-base);
   width: 100%;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -176,14 +186,25 @@
 .meal-items-table th {
   color: var(--gray-400);
   font-weight: 600;
+  font-size: var(--text-base);
 }
 
 .meal-items-table input {
-  
   min-width: 80px;
   box-sizing: border-box;
-  font-size: 0.9rem;
-  padding: 0.4rem 0.5rem;
+  font-size: var(--text-base);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  transition: border-color var(--transition-normal);
+}
+
+.meal-items-table input:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.2);
 }
 
 .meal-items-table .action-cell {
@@ -193,15 +214,16 @@
   display: flex;
   justify-content: end;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  
 }
 .remove-btn-meal {
   width: auto;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   font-weight: 500;
+  font-size: var(--text-xs);
   transition: var(--transition-normal);
   background-color: transparent;
   color: var(--primary-red);
@@ -244,6 +266,7 @@
   margin-top: var(--spacing-xl);
   display: flex;
   justify-content: flex-end;
+  gap: var(--spacing-md);
 }
 
 .submit-btn {

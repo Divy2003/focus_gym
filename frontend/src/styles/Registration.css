@@ -21,7 +21,7 @@
     border: 1px solid rgba(75, 85, 99, 0.3);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-xl);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-md);
     width: 100%;
     max-width: 500px;
     border-top: 4px solid var(--primary-orange);

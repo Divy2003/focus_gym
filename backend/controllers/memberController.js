@@ -63,7 +63,16 @@ const getMembers = async (req, res) => {
     // Filter by status
     if (status) {
       if (status === 'expired') {
-        query.endingDate = { $lt: now };
+        // Include members with status 'expired' OR approved members with past endingDate
+        query.$or = [
+          { status: 'expired' },
+          { 
+            $and: [
+              { endingDate: { $lt: now } },
+              { status: 'approved' }
+            ]
+          }
+        ];
       } else if (status === 'expiring') {
         // Members expiring in the next 7 days
         query.endingDate = { 

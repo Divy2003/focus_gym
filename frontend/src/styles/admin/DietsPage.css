@@ -106,6 +106,7 @@
 
 .diets-table {
   width: 100%;
+  font-size: var(--text-sm);
   border-collapse: collapse;
 }
 

@@ -18,8 +18,10 @@
     padding: 2rem;
     border-radius: 10px;
     width: 90%;
+   
+    margin: 1rem;
     max-width: 500px;
-    max-height: 90vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden; /* Prevent double scrollbars */
@@ -86,14 +88,17 @@
 
 .modal-header h2 {
     margin: 0;
-    color: var(--accent-color);
+    font-size: var(--text-2xl);
+    color: var(--primary-text);
+    font-weight: 600;
 }
 
 .close-button {
     background: none;
     border: none;
     color: var(--primary-text);
-    font-size: 1.5rem;
+    font-size: var(--text-lg);
+    width: auto;
     cursor: pointer;
 }
 
@@ -105,20 +110,22 @@
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    padding-top: 1rem;
+    
     margin-top: auto;
-    border-top: 1px solid var(--border-color);
+    
 }
 
 .form-group {
-    margin-bottom: 1.25rem;
+   
     padding: 0.5rem 0;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    color: var(--secondary-text);
+    
+    color: var(--primary-text);
+    font-size: var(--text-sm);
+    font-weight: 500;
 }
 
 .form-group input,
@@ -131,4 +138,99 @@
     background-color: var(--primary-bg);
     color: var(--primary-text);
     font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+    /* Prevent any pointer event issues */
+    pointer-events: auto;
+    user-select: text;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.2);
+}
+
+/* Ensure modal content doesn't interfere with form inputs */
+.modal-content {
+    pointer-events: auto;
+}
+
+.modal-overlay {
+    pointer-events: auto;
+}
+
+/* Prevent text selection issues */
+.form-group input,
+.form-group select,
+.form-group textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+.btn-cancel {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: var(--primary-text);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-cancel:hover {
+    background-color: var(--border-color);
+}
+
+.submit-btn,
+.btn-confirm {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    background-color: var(--accent-color);
+    color: white;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    transition: all var(--transition-normal);
+}
+
+.submit-btn:hover,
+.btn-confirm:hover {
+    background-color: #0088cc;
+    transform: translateY(-1px);
+}
+
+.submit-btn:active,
+.btn-confirm:active {
+    transform: translateY(0);
+}
+
+.submit-btn:disabled,
+.btn-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Animation for spinner */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
 }

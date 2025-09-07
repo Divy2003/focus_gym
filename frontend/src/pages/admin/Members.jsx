@@ -6,10 +6,9 @@ import {
   useAddMemberMutation, 
   useUpdateMemberMutation, 
   useDeleteMemberMutation,
-  useBulkDeleteMembersMutation,
-  useSendMessageMutation 
+  useBulkDeleteMembersMutation
 } from '../../redux/api/gymApi';
-import {
+import { 
   setFilters, 
   setSelectedMembers, 
   toggleMemberSelection, 
@@ -17,24 +16,29 @@ import {
   clearSelectedMembers,
   setShowAddModal,
   setShowEditModal,
-  setShowMessageModal,
   setEditingMember
 } from '../../redux/slices/membersSlice.js';
 import { 
-  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2
+  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle
 } from 'lucide-react';
+import UpdateMemberModalFixed from '../../components/admin/UpdateMemberModalFixed';
 import '../../styles/admin/MembersPage.css';
 
 const MembersPage = () => {
+  const openWhatsAppChat = (mobile) => {
+    // Remove any non-numeric characters from the mobile number
+    const phoneNumber = mobile.replace(/\D/g, '');
+    // Open WhatsApp chat with the member's number
+    window.open(`https://wa.me/${phoneNumber}`, '_blank');
+  };
   const dispatch = useDispatch();
-  const { selectedMembers, filters, showAddModal, showEditModal, showMessageModal, editingMember } = useSelector(state => state.members);
+  const { selectedMembers = [], filters, showAddModal, showEditModal, editingMember } = useSelector(state => state.members);
   
   const { data: membersData, isLoading, error, refetch } = useGetMembersQuery(filters);
   const [addMember, { isLoading: isAdding }] = useAddMemberMutation();
   const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
   const [deleteMember] = useDeleteMemberMutation();
   const [bulkDeleteMembers] = useBulkDeleteMembersMutation();
-  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
   const members = membersData?.members || [];
   const pagination = membersData?.pagination || {};
@@ -47,7 +51,6 @@ const MembersPage = () => {
     description: '',
     status: 'pending' 
   });
-  const [messageForm, setMessageForm] = useState({ message: '', includeLink: false });
 
   useEffect(() => {
     if (showEditModal && editingMember) {
@@ -115,6 +118,32 @@ const MembersPage = () => {
     }
   };
 
+  // Handler for the new fixed modal
+  const handleFixedModalUpdate = async (memberId, formData) => {
+    try {
+      const updateData = { ...formData };
+      
+      // If the member was pending and we're updating fees, don't include status in the update
+      if (editingMember?.status === 'pending' && formData.fees > 0) {
+        delete updateData.status;
+      }
+      
+      await updateMember({ 
+        id: memberId, 
+        ...updateData 
+      }).unwrap();
+      
+      dispatch(setShowEditModal(false));
+      refetch();
+    } catch (err) {
+      console.error('Failed to update member:', err);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    dispatch(setShowEditModal(false));
+  };
+
   const handleDeleteMember = async (memberId) => {
     if (window.confirm('Are you sure you want to delete this member?')) {
       try {
@@ -137,16 +166,6 @@ const MembersPage = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    try {
-      await sendMessage({ memberIds: selectedMembers, ...messageForm }).unwrap();
-      dispatch(setShowMessageModal(false));
-      setMessageForm({ message: '', includeLink: false });
-    } catch (err) {
-      console.error('Failed to send message:', err);
-    }
-  };
 
   const getStatusBadge = (status, member) => {
     const statusConfig = {
@@ -168,17 +187,43 @@ const MembersPage = () => {
   };
 
   const MemberModal = ({ isOpen, onClose, onSubmit, title, isLoading, children }) => {
+    // Handle ESC key to close modal
+    useEffect(() => {
+      if (!isOpen) return;
+      
+      const handleEscKey = (e) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      
+      document.addEventListener('keydown', handleEscKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscKey);
+      };
+    }, [isOpen, onClose]);
+    
     if (!isOpen) return null;
+    
+    const handleOverlayClick = (e) => {
+      // Only close if clicking directly on the overlay, not on the modal content
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    };
+    
     return (
-      <div className="modal-overlay">
-        <div className="modal-content">
+      <div className="modal-overlay" onClick={handleOverlayClick}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h2>{title}</h2>
             <button onClick={onClose} className="modal-close-btn"><X size={24} /></button>
           </div>
-          <div className="modal-body">
-            <form onSubmit={onSubmit}>{children}</form>
-          </div>
+          <form onSubmit={onSubmit}>
+            <div className="modal-body">
+              {children}
+            </div>
+          </form>
         </div>
       </div>
     );
@@ -220,17 +265,14 @@ const MembersPage = () => {
               >
                 <option value="">All Status</option>
                 <option value="approved">Approved</option>
+                <option value="expired">Expired</option>
                 <option value="pending">Pending</option>
                 <option value="expiring">Expiring Soon</option>
-                <option value="expired">Expired</option>
+               
               </select>
             
             {selectedMembers.length > 0 && (
               <div className="bulk-actions">
-                <button onClick={() => dispatch(setShowMessageModal(true))} className="action-btn message-btn">
-                  <MessageSquare size={16} />
-                  <span>Message ({selectedMembers.length})</span>
-                </button>
                 <button onClick={handleBulkDelete} className="action-btn delete-btn">
                   <Trash2 size={16} />
                   <span>Delete ({selectedMembers.length})</span>
@@ -245,7 +287,22 @@ const MembersPage = () => {
             <table className="members-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" className="checkbox" checked={members.length > 0 && selectedMembers.length === members.length} onChange={(e) => dispatch(e.target.checked ? selectAllMembers(members.map(m => m._id)) : clearSelectedMembers())} /></th>
+                  <th>
+                    <input 
+                      type="checkbox" 
+                      className="checkbox" 
+                      checked={members.length > 0 && selectedMembers.length === members.length} 
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const allMemberIds = members.map(m => m._id);
+                          dispatch(selectAllMembers(allMemberIds));
+                        } else {
+                          dispatch(clearSelectedMembers());
+                        }
+                      }}
+                      disabled={members.length === 0}
+                    />
+                  </th>
                   <th>Member</th>
                   <th>Membership</th>
                   <th>Status</th>
@@ -260,7 +317,14 @@ const MembersPage = () => {
                   <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--primary-red)' }}>Error loading members.</td></tr>
                 ) : members.map((member) => (
                   <tr key={member._id}>
-                    <td><input type="checkbox" className="checkbox" checked={selectedMembers.includes(member._id)} onChange={() => dispatch(toggleMemberSelection(member._id))} /></td>
+                    <td>
+                      <input 
+                        type="checkbox" 
+                        className="checkbox" 
+                        checked={selectedMembers.includes(member._id)} 
+                        onChange={() => dispatch(toggleMemberSelection(member._id))} 
+                      />
+                    </td>
                     <td>
                       <div className="member-info">
                         <div className="member-avatar">{member.name.charAt(0).toUpperCase()}</div>
@@ -280,16 +344,34 @@ const MembersPage = () => {
                     <td><div className="fees"><IndianRupee size={16} />{member.fees.toLocaleString()}</div></td>
                     <td>
                       <div className="action-buttons">
-                        <button onClick={() => dispatch(setEditingMember(member))} className="icon-btn edit-btn" title="Edit member"><Edit size={16} /></button>
-                        <button onClick={() => handleDeleteMember(member._id)} className="icon-btn delete-btn" title="Delete member"><Trash2 size={16} /></button>
+                        <button 
+                          onClick={() => openWhatsAppChat(member.mobile)} 
+                          className="icon-btn whatsapp-btn" 
+                          title="Message on WhatsApp"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+                        <button 
+                          onClick={() => dispatch(setEditingMember(member))} 
+                          className="icon-btn edit-btn" 
+                          title="Edit member"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteMember(member._id)} 
+                          className="icon-btn delete-btn" 
+                          title="Delete member"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-          {pagination.total > 1 && (
+            {pagination.total > 1 && (
             <div className="pagination-container">
               <div className="pagination-info">Showing {((pagination.current - 1) * filters.limit) + 1} to {Math.min(pagination.current * filters.limit, pagination.totalMembers)} of {pagination.totalMembers} results</div>
               <div className="pagination-controls">
@@ -299,77 +381,56 @@ const MembersPage = () => {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
-
-      <MemberModal isOpen={showAddModal || showEditModal} onClose={() => dispatch(showAddModal ? setShowAddModal(false) : setShowEditModal(false))} onSubmit={showAddModal ? handleAddMember : handleUpdateMember} title={showAddModal ? 'Add New Member' : 'Update Member'} isLoading={isAdding || isUpdating}>
+      {/* Add Member Modal */}
+      <MemberModal 
+        isOpen={showAddModal} 
+        onClose={() => dispatch(setShowAddModal(false))} 
+        onSubmit={handleAddMember} 
+        title="Add New Member" 
+        isLoading={isAdding}
+      >
         <div className="form-scroll-container">
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
-          <input type="text" id="name" name="name" value={memberForm.name} onChange={handleFormChange} required />
-        </div>
-        <div className="form-group">
-          <label htmlFor="mobile">Mobile Number</label>
-          <input type="tel" id="mobile" name="mobile" value={memberForm.mobile} onChange={handleFormChange} required />
-        </div>
-        <div className="form-group">
-          <label htmlFor="month">Membership Duration (Months)</label>
-          <input type="number" id="month" name="month" value={memberForm.month} onChange={handleFormChange} min="1" required />
-        </div>
-        <div className="form-group">
-          <label htmlFor="fees">Fees</label>
-          <input type="number" id="fees" name="fees" value={memberForm.fees} onChange={handleFormChange} min="0" required />
-        </div>
-        {showEditModal && (
-          <div className="form-group">
-            <label htmlFor="status">Status</label>
-            <select 
-              id="status" 
-              name="status" 
-              value={memberForm.status} 
-              onChange={handleFormChange}
-              className="status-select"
-              disabled={memberForm.status === 'pending'}
-            >
-              <option value="approved">Active</option>
-              <option value="expired">Expired</option>
-            </select>
-            {memberForm.status === 'pending' && (
-              <div className="status-help-text">
-                Status will be automatically updated to 'Active' when fees are paid.
-              </div>
-            )}
+            <input type="text" id="name" name="name" value={memberForm.name} onChange={handleFormChange} required />
           </div>
-        )}
-        <div className="form-group">
-          <label htmlFor="description">Description (Optional)</label>
-          <textarea id="description" name="description" value={memberForm.description} onChange={handleFormChange}></textarea>
-        </div>
+          <div className="form-group">
+            <label htmlFor="mobile">Mobile Number</label>
+            <input type="tel" id="mobile" name="mobile" value={memberForm.mobile} onChange={handleFormChange} required />
+          </div>
+          <div className="form-group">
+            <label htmlFor="month">Membership Duration (Months)</label>
+            <input type="number" id="month" name="month" value={memberForm.month} onChange={handleFormChange} min="1" required />
+          </div>
+          <div className="form-group">
+            <label htmlFor="fees">Fees</label>
+            <input type="number" id="fees" name="fees" value={memberForm.fees} onChange={handleFormChange} min="0" required />
+          </div>
+          <div className="form-group">
+            <label htmlFor="description">Description (Optional)</label>
+            <textarea id="description" name="description" value={memberForm.description} onChange={handleFormChange}></textarea>
+          </div>
         </div>
         <div className="modal-footer">
-          <button type="submit" className="submit-btn" disabled={isAdding || isUpdating}>
-            {(isAdding || isUpdating) && <Loader2 size={16} className="animate-spin" />}
-            <span>{showAddModal ? 'Add Member' : 'Save Changes'}</span>
+          <button type="button" onClick={() => dispatch(setShowAddModal(false))} className="btn-cancel">Cancel</button>
+          <button type="submit" className="submit-btn" disabled={isAdding}>
+            {isAdding && <Loader2 size={16} className="animate-spin" />}
+            <span>Add Member</span>
           </button>
         </div>
       </MemberModal>
 
-      <MemberModal isOpen={showMessageModal} onClose={() => dispatch(setShowMessageModal(false))} onSubmit={handleSendMessage} title={`Send Message to ${selectedMembers.length} Members`} isLoading={isSending}>
-        <div className="form-group">
-          <label htmlFor="message">Message</label>
-          <textarea id="message" name="message" value={messageForm.message} onChange={(e) => setMessageForm(p => ({...p, message: e.target.value}))} required></textarea>
-        </div>
-        <div className="checkbox-group">
-          <input type="checkbox" id="includeLink" name="includeLink" checked={messageForm.includeLink} onChange={(e) => setMessageForm(p => ({...p, includeLink: e.target.checked}))} />
-          <label htmlFor="includeLink">Include app link in message</label>
-        </div>
-        <div className="modal-footer">
-          <button type="submit" className="submit-btn" disabled={isSending}>
-            {isSending && <Loader2 size={16} className="animate-spin" />}
-            <span>Send Message</span>
-          </button>
-        </div>
-      </MemberModal>
+      {/* Update Member Modal - Using the Fixed Component */}
+      <UpdateMemberModalFixed
+        member={editingMember}
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        onUpdate={handleFixedModalUpdate}
+        isLoading={isUpdating}
+      />
     </div>
   );
 };
