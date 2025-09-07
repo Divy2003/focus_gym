@@ -71,8 +71,8 @@ const membersSlice = createSlice({
         state.selectedMembers.push(memberId);
       }
     },
-    selectAllMembers: (state) => {
-      state.selectedMembers = state.members.map(member => member._id);
+    selectAllMembers: (state, action) => {
+      state.selectedMembers = action.payload;
     },
     clearSelectedMembers: (state) => {
       state.selectedMembers = [];
