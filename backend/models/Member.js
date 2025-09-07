@@ -66,5 +66,19 @@ memberSchema.pre('save', function(next) {
 
 // Index for search
 memberSchema.index({ name: 'text', mobile: 'text' });
+// Indexes to speed up queries and maintenance tasks
+memberSchema.index({ endingDate: 1 });
+memberSchema.index({ status: 1 });
+memberSchema.index({ status: 1, endingDate: 1 });
+
+// Static method to bulk mark members as expired when endingDate is past
+memberSchema.statics.updateExpiredMembers = async function() {
+  const now = new Date();
+  const result = await this.updateMany(
+    { isActive: true, status: { $ne: 'expired' }, endingDate: { $lt: now } },
+    { $set: { status: 'expired' } }
+  );
+  return result;
+};
 
 module.exports = mongoose.model('Member', memberSchema);

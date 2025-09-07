@@ -238,6 +238,28 @@ const bulkDeleteMembers = async (req, res) => {
   }
 };
 
+// Maintenance: Bulk update expired members (to be triggered by a scheduler)
+const runExpireMaintenance = async (req, res) => {
+  try {
+    const result = await Member.updateExpiredMembers();
+    // Support different Mongoose result shapes
+    const matched = result?.matchedCount ?? result?.n ?? 0;
+    const modified = result?.modifiedCount ?? result?.nModified ?? 0;
+
+    return res.status(200).json({
+      success: true,
+      message: `Expired members updated. Modified: ${modified}`,
+      details: { matched, modified }
+    });
+  } catch (error) {
+    console.error('Expire maintenance error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to run expiry maintenance'
+    });
+  }
+};
+
 // Send message to members
 const sendMessage = async (req, res) => {
   try {
@@ -297,5 +319,6 @@ module.exports = {
   updateMember,
   deleteMember,
   bulkDeleteMembers,
-  sendMessage
+  sendMessage,
+  runExpireMaintenance
 };

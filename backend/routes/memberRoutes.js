@@ -8,7 +8,8 @@ const {
   updateMember,
   deleteMember,
   bulkDeleteMembers,
-  sendMessage
+  sendMessage,
+  runExpireMaintenance
 } = require('../controllers/memberController');
 
 const router = express.Router();
@@ -44,5 +45,8 @@ router.post('/send-message', [
   body('memberIds').isArray().withMessage('Member IDs must be an array'),
   body('message').trim().notEmpty().withMessage('Message is required')
 ], sendMessage);
+
+// Maintenance route (secured) to be called by an external scheduler
+router.post('/maintenance/update-expired', runExpireMaintenance);
 
 module.exports = router;

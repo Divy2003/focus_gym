@@ -5,12 +5,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cron = require('node-cron');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const dietRoutes = require('./routes/dietRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const Member = require('./models/Member');
 
 const app = express();
 
@@ -67,6 +69,22 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.log('Connected to MongoDB');
   // Seed admin data on startup
   require('./seeders/adminSeeder');
+  
+  // Setup cron job for daily member expiry check
+  cron.schedule('5 0 * * *', async () => {
+    try {
+      console.log('Running daily member expiry check...');
+      const result = await Member.updateExpiredMembers();
+      const modified = result?.modifiedCount ?? result?.nModified ?? 0;
+      console.log(`Expired members updated: ${modified}`);
+    } catch (error) {
+      console.error('Cron job error:', error);
+    }
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+  
+  console.log('Daily expiry cron job scheduled for 12:05 AM IST');
 })
 .catch(err => console.error('MongoDB connection error:', err));
 
