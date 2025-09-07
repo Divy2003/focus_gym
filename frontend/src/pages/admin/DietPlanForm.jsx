@@ -47,7 +47,7 @@ const DietPlanForm = () => {
       // For new form, mark as initialized immediately
       setIsInitialized(true);
     }
-  }, [isEditing, existingPlan]);
+  }, [isEditing, existingPlan, error]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -84,7 +84,7 @@ const DietPlanForm = () => {
   const addMeal = () => {
     setFormData(prev => ({
       ...prev,
-      meals: [...prev.meals, { name: '', time: '', items: [] }]
+      meals: [...prev.meals, { name: '', items: [] }]
     }));
   };
 
@@ -102,7 +102,7 @@ const DietPlanForm = () => {
         idx === mealIndex 
           ? {
               ...meal,
-              items: [...meal.items, { food: '', quantity: '', calories: 0, protein: 0 }]
+              items: [...meal.items, { food: '', quantity: '', calories: 0, protein: 0, ingredients: '' }]
             }
           : meal
       )
@@ -134,12 +134,12 @@ const DietPlanForm = () => {
         notes: formData.notes,
         meals: formData.meals.map(meal => ({
           name: meal.name,
-          time: meal.time,
           items: meal.items.map(item => ({
             food: item.food,
             quantity: item.quantity,
             calories: Number(item.calories) || 0,
-            protein: Number(item.protein) || 0
+            protein: Number(item.protein) || 0,
+            ingredients: item.ingredients || ''
           }))
         }))
       };
@@ -216,13 +216,10 @@ const DietPlanForm = () => {
               <div className="meal-header">
                 <div className="form-grid">
                   <div className="form-group">
-                    <label>Meal Name (e.g., Breakfast)</label>
+                    <label>Meal Name (Time) (e.g., Breakfast)</label>
                     <input type="text" name="name" value={meal.name} onChange={(e) => handleMealChange(mealIndex, e)} placeholder="Breakfast" />
                   </div>
-                  <div className="form-group">
-                    <label>Time</label>
-                    <input type="text" name="time" value={meal.time} onChange={(e) => handleMealChange(mealIndex, e)} placeholder="8:00 AM" />
-                  </div>
+                  
                 </div>
                 </div>
               <table className="meal-items-table">
@@ -232,16 +229,18 @@ const DietPlanForm = () => {
                     <th>Quantity</th>
                     <th>Calories</th>
                     <th>Protein (g)</th>
+                    <th>Ingredients</th>
                     <th className="action-cell"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {meal.items.map((item, itemIndex) => (
                     <tr key={itemIndex}>
-                      <td><input type="text" name="food" value={item.food} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} placeholder="e.g., Egg whites" /></td>
+                      <td><input type="text" className="food-input" name="food" value={item.food} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} placeholder="e.g., Egg whites" /></td>
                       <td><input type="text" name="quantity" value={item.quantity} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} placeholder="e.g., 4 large" /></td>
                       <td><input type="number" name="calories" value={item.calories} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} /></td>
                       <td><input type="number" name="protein" value={item.protein} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} /></td>
+                      <td><input type="text" className="ingredients-input" name="ingredients" value={item.ingredients || ''} onChange={(e) => handleItemChange(mealIndex, itemIndex, e)} placeholder="e.g., 2 eggs, 1 tbsp oil" /></td>
                       <td className="action-cell"><button type="button" onClick={() => removeItemFromMeal(mealIndex, itemIndex)} className="remove-btn"><Trash2 size={16} /></button></td>
                     </tr>
                   ))}

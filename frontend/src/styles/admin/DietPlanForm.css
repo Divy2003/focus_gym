@@ -1,12 +1,22 @@
 /* DietPlanForm.css */
 
 .diet-form-container {
-  max-width: 900px;
-  margin: var(--spacing-xl) auto;
-  padding: var(--spacing-xl);
+  max-width: 100%;
+  margin: 0;
+  padding: var(--spacing-md);
   background-color: var(--gray-800);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .diet-form-container {
+    max-width: 900px;
+    margin: var(--spacing-xl) auto;
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+  }
 }
 
 .diet-form-header {
@@ -20,7 +30,12 @@
   font-weight: bold;
   color: var(--white);
 }
-
+.food-input{
+  width: 8rem;
+}
+.ingredients-input{
+  width: 16rem;
+}
 .diet-form-header p {
   color: var(--gray-400);
   margin-top: var(--spacing-xs);
@@ -41,8 +56,15 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+  }
 }
 
 .form-group {
@@ -63,9 +85,22 @@
   border: 1px solid var(--gray-600);
   color: var(--gray-300);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.75rem 1rem;
   transition: var(--transition-fast);
-  font-size: var(--text-base);
+  font-size: 1rem;
+  width: 100%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Improve select dropdown appearance on mobile */
+.form-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px 12px;
+  padding-right: 2.5rem;
 }
 
 .form-group input:focus,
@@ -90,7 +125,14 @@
   border: 1px solid var(--gray-700);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .meal-card {
+    padding: var(--spacing-lg);
+  }
 }
 
 .meal-header {
@@ -108,13 +150,27 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: var(--spacing-lg);
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.meal-items-table table {
+  min-width: 600px;
+  width: 100%;
 }
 
 .meal-items-table th,
 .meal-items-table td {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.50rem;
   text-align: left;
   border-bottom: 1px solid var(--gray-700);
+  white-space: nowrap;
+}
+
+.meal-items-table td {
+  white-space: normal;
+  word-break: break-word;
 }
 
 .meal-items-table th {
@@ -123,8 +179,11 @@
 }
 
 .meal-items-table input {
-  width: 100%;
+  
+  min-width: 80px;
   box-sizing: border-box;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
 }
 
 .meal-items-table .action-cell {

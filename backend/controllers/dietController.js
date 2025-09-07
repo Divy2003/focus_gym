@@ -150,7 +150,7 @@ const processDietPlanData = (data) => {
       quantity: item.quantity || '',
       calories: Number(item.calories) || 0,
       protein: Number(item.protein) || 0,
-      ingredients: item.ingredients || ''
+      ingredients: item.ingredients || ''  // Ensure ingredients is included
     })) : []
   }));
 
