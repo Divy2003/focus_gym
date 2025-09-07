@@ -66,9 +66,21 @@ const authSlice = createSlice({
 });
 
 // Selectors
-export const selectCurrentToken = (state) => state.auth.token;
-export const selectCurrentUser = (state) => state.auth.admin;
+export const selectCurrentToken = (state) => {
+  // First try to get from Redux state
+  const tokenFromState = state.auth.token;
+  // Fallback to localStorage if not in state (useful for page refresh)
+  return tokenFromState || localStorage.getItem('token');
+};
 
+export const selectCurrentUser = (state) => {
+  // First try to get from Redux state
+  const userFromState = state.auth.admin;
+  // Fallback to localStorage if not in state (useful for page refresh)
+  return userFromState || JSON.parse(localStorage.getItem('admin') || 'null');
+};
+
+// Export all actions
 export const {
   setLoading,
   setError,
@@ -79,5 +91,8 @@ export const {
   logout,
   resetAuthState,
 } = authSlice.actions;
+
+// Alias loginSuccess as setCredentials for backward compatibility
+export const setCredentials = loginSuccess;
 
 export default authSlice.reducer;

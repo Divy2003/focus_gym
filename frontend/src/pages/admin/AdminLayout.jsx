@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { clearCredentials } from '../../features/auth/authSlice';
+import { logout } from '../../redux/slices/authSlice';
 import '../../styles/admin/AdminLayout.css';
 
 const AdminLayout = () => {
@@ -12,7 +12,7 @@ const AdminLayout = () => {
   const sidebarRef = useRef(null);
 
   const handleLogout = () => {
-    dispatch(clearCredentials());
+    dispatch(logout());
     navigate('/admin/login');
   };
 

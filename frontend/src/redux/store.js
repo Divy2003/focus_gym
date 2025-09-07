@@ -5,7 +5,7 @@ import membersSlice from './slices/membersSlice.js';
 import dietPlansSlice from './slices/dietPlansSlice';
 import analyticsSlice from './slices/analyticsSlice';
 import { gymApi } from './api/gymApi';
-import { apiSlice } from '../features/api/apiSlice';
+import { authApi } from './api/authApi';
 
 // Create the store with the reducer and middleware
 const store = configureStore({
@@ -16,17 +16,18 @@ const store = configureStore({
     analytics: analyticsSlice,
     // Add the generated reducers as specific top-level slices
     [gymApi.reducerPath]: gymApi.reducer,
-    [apiSlice.reducerPath]: apiSlice.reducer,
+    [authApi.reducerPath]: authApi.reducer,
   },
   // Adding the api middleware enables caching, invalidation, polling,
   // and other useful features of `rtk-query`.
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [gymApi.util.resetApiState.type, apiSlice.util.resetApiState.type],
+        ignoredActions: [gymApi.util.resetApiState.type],
       },
     })
-    .concat(gymApi.middleware, apiSlice.middleware),
+    .concat(gymApi.middleware)
+    .concat(authApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
