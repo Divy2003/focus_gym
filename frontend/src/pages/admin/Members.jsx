@@ -237,7 +237,7 @@ const MembersPage = () => {
             <h1>Members</h1>
             <p>Manage your gym members and memberships</p>
           </div>
-          <Link to="/Registration" style={{ textDecoration: 'none' }}>
+          <Link to="/Registration" state={{ isAdmin: true }} style={{ textDecoration: 'none' }}>
           <button  className="add-member-btn">
             <Plus size={20} />
             Add Member

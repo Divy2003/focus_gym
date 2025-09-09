@@ -69,7 +69,9 @@ const sendOTP = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "OTP sent successfully",
-      otp: process.env.NODE_ENV === "development" ? otp : undefined,
+      //otp: process.env.NODE_ENV === "development" ? otp : undefined,
+      // Include OTP in response so client can display it on the verify page when needed
+      otp,
     });
   } catch (error) {
     console.error("Send OTP error:", error);

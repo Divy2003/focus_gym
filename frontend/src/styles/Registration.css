@@ -35,11 +35,10 @@
   }
   
   .gym-logo-responsive {
-    width: 60px;
-    height: 60px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-full);
-    margin: 0 auto var(--spacing-md);
+    width: 100px;
+    height: 70px;
+    
+    margin: 0 auto ;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -49,7 +48,7 @@
   }
   
   .form-title-responsive {
-    font-size: var(--text-3xl);
+    font-size: var(--text-2xl);
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
     background: var(--gradient-primary);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/Registration.css';  // 👈 Import CSS file
-
+import gymLogo from '../assets/logo.png';
+import { useLocation, useSearchParams } from 'react-router-dom';
 const RegistrationForm = () => {
   // Form state
   const [formData, setFormData] = useState({
@@ -16,6 +17,12 @@ const RegistrationForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
   const [showPriceDisplay, setShowPriceDisplay] = useState(false);
+
+  // Determine if this page is opened by an admin (from admin dashboard)
+  // Priority: location.state.isAdmin, fallback to URL param ?admin=true
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isAdmin = Boolean(location.state?.isAdmin) || searchParams.get('admin') === 'true';
 
   // Suggested prices for different durations
   const suggestedPrices = {
@@ -44,12 +51,18 @@ const RegistrationForm = () => {
     if (name === 'month') {
       const selectedMonth = parseInt(value);
       if (selectedMonth && suggestedPrices[selectedMonth]) {
-        setFormData(prev => ({ 
-          ...prev, 
-          [name]: value,
-          fees: suggestedPrices[selectedMonth].toString()
-        }));
-        setShowPriceDisplay(true);
+        // Only admins can set/see fees and price display
+        if (isAdmin) {
+          setFormData(prev => ({ 
+            ...prev, 
+            [name]: value,
+            fees: suggestedPrices[selectedMonth].toString()
+          }));
+          setShowPriceDisplay(true);
+        } else {
+          setFormData(prev => ({ ...prev, [name]: value }));
+          setShowPriceDisplay(false);
+        }
       } else {
         setFormData(prev => ({ ...prev, [name]: value }));
         setShowPriceDisplay(false);
@@ -58,8 +71,11 @@ const RegistrationForm = () => {
     }
 
     if (name === 'fees') {
-      setFormData(prev => ({ ...prev, [name]: value }));
-      setShowPriceDisplay(value && parseInt(value) > 0);
+      // Only allow admins to modify fees and see price display
+      if (isAdmin) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        setShowPriceDisplay(value && parseInt(value) > 0);
+      }
       return;
     }
 
@@ -88,7 +104,7 @@ const RegistrationForm = () => {
         name: formData.name.trim(),
         mobile: `+91${cleanMobile}`,
         month: parseInt(formData.month),
-        fees: parseFloat(formData.fees) || 0,
+        fees: isAdmin ? (parseFloat(formData.fees) || 0) : 0,
         description: formData.description.trim()
       };
 
@@ -122,7 +138,9 @@ const RegistrationForm = () => {
         
         {/* Header */}
         <div className="form-header">
-          <div className="gym-logo-responsive">💪</div>
+          <div className="gym-logo-responsive">
+            <img src={gymLogo} alt="" style={{ width: '100%' }}/>
+          </div>
           <h1 className="form-title-responsive">Join Our Gym</h1>
           <p>Start your fitness journey today</p>
         </div>
@@ -191,23 +209,25 @@ const RegistrationForm = () => {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="fees">Membership Fees </label>
-              <input
-                type="number"
-                id="fees"
-                name="fees"
-                value={formData.fees}
-                onChange={handleInputChange}
-                placeholder="Enter amount"
-                min="0"
-                step="100"
-              />
-            </div>
+            {isAdmin && (
+              <div>
+                <label htmlFor="fees">Membership Fees </label>
+                <input
+                  type="number"
+                  id="fees"
+                  name="fees"
+                  value={formData.fees}
+                  onChange={handleInputChange}
+                  placeholder="Enter amount"
+                  min="0"
+                  step="100"
+                />
+              </div>
+            )}
           </div>
 
           {/* Price Display */}
-          {showPriceDisplay && (
+          {isAdmin && showPriceDisplay && (
             <div className="price-display">
               <div>Total Amount</div>
               <div>₹{parseInt(formData.fees || 0).toLocaleString('en-IN')}</div>

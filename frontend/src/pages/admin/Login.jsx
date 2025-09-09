@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { useSendOtpMutation, useVerifyOtpMutation } from '../../redux/api/authApi';
 import { setCredentials } from '../../redux/slices/authSlice';
 import '../../styles/admin/Login.css';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [mobile, setMobile] = useState('');
@@ -116,11 +117,18 @@ const Login = () => {
                 }}
                 placeholder="Enter 10-digit mobile number"
                 inputMode="numeric"
+                disabled={isSendingOtp}
                 required
               />
             </div>
             <button type="submit" disabled={isSendingOtp}>
-              {isSendingOtp ? 'Sending...' : 'Send OTP'}
+              {isSendingOtp ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> Sending...
+                </>
+              ) : (
+                'Send OTP'
+              )}
             </button>
           </form>
         ) : (
@@ -129,7 +137,7 @@ const Login = () => {
               <label htmlFor="otp">Enter OTP</label>
               {generatedOtp && (
                 <div className="otp-display">
-                  <p>For testing purposes, use this OTP: <strong>{generatedOtp}</strong></p>
+                  <p><strong>{generatedOtp}</strong></p>
                 </div>
               )}
               <input
@@ -145,11 +153,18 @@ const Login = () => {
                 placeholder="6-digit OTP"
                 maxLength={6}
                 inputMode="numeric"
+                disabled={isVerifyingOtp}
                 required
               />
             </div>
             <button type="submit" disabled={isVerifyingOtp}>
-              {isVerifyingOtp ? 'Verifying...' : 'Verify & Login'}
+              {isVerifyingOtp ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> Verifying...
+                </>
+              ) : (
+                'Verify & Login'
+              )}
             </button>
           </form>
         )}
