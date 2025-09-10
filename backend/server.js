@@ -1,4 +1,15 @@
-// server.js
+// Load environment variables first
+require('dotenv').config({ path: '.env' });
+
+// Verify required environment variables
+const requiredEnvVars = ['MONGODB_URI'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  process.exit(1);
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -6,7 +17,6 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
-require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
@@ -61,13 +71,17 @@ app.use('*', (req, res) => {
 });
 
 // MongoDB connection
+console.log('Attempting to connect to MongoDB...');
+console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Found (hidden for security)' : 'Not found');
+
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
 })
 .then(() => {
-  console.log('Connected to MongoDB');
-  // Seed admin data on startup
+  console.log('✅ Successfully connected to MongoDB');
   require('./seeders/adminSeeder');
   
   // Setup cron job for daily member expiry check
