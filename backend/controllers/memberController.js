@@ -1,9 +1,18 @@
 // controllers/memberController.js
 const Member = require('../models/Member');
 const { validationResult } = require('express-validator');
-const twilio = require('twilio');
+// Twilio is optional. Only initialize if credentials are present
+let client = null;
+const hasTwilio = Boolean(
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_PHONE_NUMBER
+);
 
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+if (hasTwilio) {
+  const twilio = require('twilio');
+  client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+}
 
 // Add new member
 const addMember = async (req, res) => {
@@ -269,6 +278,15 @@ const sendMessage = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide valid member IDs'
+      });
+    }
+
+    // If Twilio is not configured, short-circuit safely
+    if (!hasTwilio) {
+      return res.status(200).json({
+        success: true,
+        message: 'Messaging service not configured. No messages were sent.',
+        results: memberIds.map(() => ({ success: false, error: 'Twilio not configured' }))
       });
     }
 
