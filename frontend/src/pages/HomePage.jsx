@@ -354,8 +354,7 @@ const HomePage = () => {
         <div className="container">
           <div className="footer-content">
             <div className="logo">
-              <Dumbbell className="logo-icon" />
-              <span className="logo-text gradient-text">FOCUS</span>
+              <img width={100} src={logo} alt="Logo" />
             </div>
             <p className="footer-text">
               © 2024 FOCUS. All rights reserved. Transform your life today.
