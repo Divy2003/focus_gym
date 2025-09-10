@@ -41,7 +41,8 @@ app.use(limiter);
 const allowedOrigins = [
   'http://localhost:5173',
   'https://focus-gym.onrender.com',
-  'http://localhost:3000' // Add any other origins you need
+  'https://focus-gym-api.onrender.com',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
