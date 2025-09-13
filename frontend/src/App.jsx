@@ -8,6 +8,7 @@ import Login from './pages/admin/Login';
 import HomePage from './pages/HomePage';
 import ProtectedRoute from './components/admin/ProtectedRoute';
 import Registration from './pages/Registration';
+import Images from './pages/admin/Images';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="diets" element={<Diets />} />
           <Route path="diets/new" element={<DietPlanForm />} />
           <Route path="diets/edit/:id" element={<DietPlanForm />} />
+          <Route path="images" element={<Images />} />
         </Route>
       </Route>
 

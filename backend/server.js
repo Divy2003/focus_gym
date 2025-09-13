@@ -38,6 +38,7 @@ const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const dietRoutes = require('./routes/dietRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const transformationsRoutes = require('./routes/transformationsRoutes');
 const Member = require('./models/Member');
 
 const app = express();
@@ -84,6 +85,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/diet', dietRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/transformations', transformationsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

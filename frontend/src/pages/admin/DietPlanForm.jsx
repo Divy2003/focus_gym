@@ -31,7 +31,7 @@ const DietPlanForm = () => {
     if (isEditing) {
       if (existingPlan?.dietPlan) {
         const { success, ...dietPlanData } = existingPlan;
-        console.log('Setting form data with:', dietPlanData.dietPlan);
+        
         setFormData({
           title: dietPlanData.dietPlan.title || '',
           targetAudience: dietPlanData.dietPlan.targetAudience || 'general',
@@ -144,11 +144,7 @@ const DietPlanForm = () => {
         }))
       };
 
-      console.log('Submitting data:', {
-        isEditing,
-        id: formData._id,
-        submitData
-      });
+      
 
       if (isEditing) {
         if (!id) {

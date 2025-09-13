@@ -30,7 +30,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const gymApi = createApi({
   reducerPath: 'gymApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Auth', 'Member', 'DietPlan', 'Analytics'],
+  tagTypes: ['Auth', 'Member', 'DietPlan', 'Analytics', 'Transformations'],
   endpoints: (builder) => ({
     // Auth endpoints
     sendOTP: builder.mutation({
@@ -134,6 +134,20 @@ export const gymApi = createApi({
       invalidatesTags: ['DietPlan', 'Analytics'],
     }),
 
+    // Transformations endpoints
+    getHomeTransformations: builder.query({
+      query: () => '/transformations/home',
+      providesTags: ['Transformations'],
+    }),
+    upsertHomeTransformations: builder.mutation({
+      query: (payload) => ({
+        url: '/transformations/home',
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: ['Transformations'],
+    }),
+
     // Analytics endpoints
     getDashboardAnalytics: builder.query({
       query: () => '/analytics/dashboard',
@@ -163,6 +177,8 @@ export const {
   useCreateDietPlanMutation,
   useUpdateDietPlanMutation,
   useDeleteDietPlanMutation,
+  useGetHomeTransformationsQuery,
+  useUpsertHomeTransformationsMutation,
   useGetDashboardAnalyticsQuery,
   useGetExpiringMembersQuery,
 } = gymApi;

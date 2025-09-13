@@ -3,6 +3,7 @@ import { Menu, X, Dumbbell, Users, Trophy, Star, ArrowRight, Play, CheckCircle, 
 import '../styles/HomePage.css';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { useGetHomeTransformationsQuery } from '../redux/api/gymApi';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +15,7 @@ const HomePage = () => {
   }, []);
 
   // Dummy transformation data
-  const transformations = [
+  const dummyTransformations = [
     {
       id: 1,
       name: "Sarah Johnson",
@@ -40,6 +41,21 @@ const HomePage = () => {
       weightLost: "8 Kg"
     }
   ];
+
+  // Fetch transformations from API
+  const { data: apiTransformationsData, isFetching: isTransformationsLoading } = useGetHomeTransformationsQuery();
+
+  // Prefer API data if exists; fallback to dummy
+  const transformations = Array.isArray(apiTransformationsData?.transformations) && apiTransformationsData.transformations.length > 0
+    ? apiTransformationsData.transformations.map((t, idx) => ({
+        id: idx + 1,
+        name: t.name || `Member ${idx + 1}`,
+        beforeImage: t.beforeImage,
+        afterImage: t.afterImage,
+        duration: t.duration || '',
+        weightLost: t.weightLost || '',
+      }))
+    : dummyTransformations;
 
   const features = [
     {
@@ -243,6 +259,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
+        <p style={{ textAlign: 'center', marginTop: '2rem' }}>For more image Follow us on <a href="https://www.instagram.com/focusgym/">Instagram</a></p>
       </section>
 
       {/* Testimonials Section */}

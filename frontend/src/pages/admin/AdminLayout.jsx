@@ -86,6 +86,7 @@ const AdminLayout = () => {
           <Link to="/admin/dashboard" onClick={closeSidebar}>Dashboard</Link>
           <Link to="/admin/members" onClick={closeSidebar}>Members</Link>
           <Link to="/admin/diets" onClick={closeSidebar}>Diet Plans</Link>
+          <Link to="/admin/images" onClick={closeSidebar}>Images</Link>
         </nav>
         <div className="sidebar-footer">
           <button onClick={handleLogout} className="logout-button">
