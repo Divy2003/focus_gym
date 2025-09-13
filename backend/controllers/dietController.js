@@ -3,6 +3,8 @@ const DietPlan = require('../models/DietPlan');
 const cloudinary = require('cloudinary').v2;
 const puppeteer = require('puppeteer');
 const handlebars = require('handlebars');
+const fs = require('fs');
+const path = require('path');
 const { validationResult } = require('express-validator');
 const { dietPlanTemplate } = require('../utils/dietPlanTemplate');
 
@@ -19,7 +21,11 @@ const generateDietPlanPDF = async (dietPlan) => {
   let browser;
   try {
     // Ensure Chrome is available (Render + Puppeteer v24+ needs browsers install at build time)
-    const execPath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : undefined;
+    let execPath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : undefined;
+    if (execPath && !fs.existsSync(execPath)) {
+      console.warn(`Puppeteer executablePath not found at ${execPath}. Falling back to default.`);
+      execPath = undefined;
+    }
 
     browser = await puppeteer.launch({
       headless: true,

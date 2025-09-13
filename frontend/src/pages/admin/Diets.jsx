@@ -121,7 +121,7 @@ const DietsPage = () => {
                         <button onClick={() => navigate(`/admin/diets/edit/${plan._id}`)} className="icon-btn" title="Edit">
                           <Edit size={16} />
                         </button>
-                        <button onClick={() => handleDelete(plan._id)} className="icon-btn" title="Delete">
+                        <button onClick={() => handleDelete(plan._id)} className="icon-btn " style={{ backgroundColor: 'var(--primary-red)' }} title="Delete">
                           <Trash2 size={16} />
                         </button>
                       </div>

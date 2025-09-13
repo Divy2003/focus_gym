@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { FaWhatsapp } from "react-icons/fa";
+
 import { 
   useGetMembersQuery, 
   useAddMemberMutation, 
@@ -346,10 +348,11 @@ const MembersPage = () => {
                       <div className="action-buttons">
                         <button 
                           onClick={() => openWhatsAppChat(member.mobile)} 
-                          className="icon-btn whatsapp-btn" 
+                          className="icon-btn " 
+                          style={{ backgroundColor: 'rgb(35 153 79)' }}
                           title="Message on WhatsApp"
                         >
-                          <MessageCircle size={16} />
+                          <FaWhatsapp size={18} />
                         </button>
                         <button 
                           onClick={() => dispatch(setEditingMember(member))} 
@@ -362,6 +365,7 @@ const MembersPage = () => {
                           onClick={() => handleDeleteMember(member._id)} 
                           className="icon-btn delete-btn" 
                           title="Delete member"
+                          style={{ backgroundColor: 'var(--primary-red)' }}
                         >
                           <Trash2 size={16} />
                         </button>
