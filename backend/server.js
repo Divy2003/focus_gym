@@ -3,11 +3,27 @@ require('dotenv').config({ path: '.env' });
 
 // Verify required environment variables
 const requiredEnvVars = ['MONGODB_URI'];
+const cloudinaryEnvVars = [
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET'
+];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
   console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
   process.exit(1);
+}
+
+// Non-fatal check for Cloudinary env vars (PDF generation will rely on these)
+const missingCloudinary = cloudinaryEnvVars.filter(varName => !process.env[varName]);
+if (missingCloudinary.length > 0) {
+  console.warn(
+    `Warning: Missing Cloudinary environment variables: ${missingCloudinary.join(', ')}. ` +
+    `PDF upload will fail until these are set.`
+  );
+} else {
+  console.log('Cloudinary environment variables detected.');
 }
 
 const express = require('express');
@@ -90,6 +106,11 @@ app.use('*', (req, res) => {
 // MongoDB connection
 console.log('Attempting to connect to MongoDB...');
 console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Found (hidden for security)' : 'Not found');
+console.log('Cloudinary config:', {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'missing',
+  api_key: process.env.CLOUDINARY_API_KEY ? 'set' : 'missing',
+  api_secret: process.env.CLOUDINARY_API_SECRET ? 'set' : 'missing'
+});
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

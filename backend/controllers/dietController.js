@@ -18,10 +18,14 @@ cloudinary.config({
 const generateDietPlanPDF = async (dietPlan) => {
   let browser;
   try {
+    // Ensure Chrome is available (Render + Puppeteer v24+ needs browsers install at build time)
+    const execPath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : undefined;
+
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
+      executablePath: execPath,
       args: [
-        '--no-sandbox', 
+        '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--no-first-run',
@@ -103,6 +107,10 @@ const generateDietPlanPDF = async (dietPlan) => {
     });
     
     // Upload to Cloudinary
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('Cloudinary env vars missing. Skipping PDF upload.');
+      throw new Error('Cloudinary configuration not set');
+    }
     const publicId = `diet-plans/plan_${dietPlan._id}_${Date.now()}`;
     
     const uploadResult = await new Promise((resolve, reject) => {
@@ -116,6 +124,7 @@ const generateDietPlanPDF = async (dietPlan) => {
         },
         (error, result) => {
           if (error) {
+            console.error('Cloudinary upload_stream error:', error?.message || error);
             reject(error);
           } else {
             resolve(result);
@@ -127,6 +136,7 @@ const generateDietPlanPDF = async (dietPlan) => {
     return uploadResult;
     
   } catch (error) {
+    console.error('generateDietPlanPDF error:', error?.message || error);
     throw error;
   } finally {
     if (browser) {
