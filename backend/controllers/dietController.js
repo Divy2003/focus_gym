@@ -1,12 +1,19 @@
 // controllers/dietController.js
 const DietPlan = require('../models/DietPlan');
 const cloudinary = require('cloudinary').v2;
-const puppeteer = require('puppeteer');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 const { validationResult } = require('express-validator');
 const { dietPlanTemplate } = require('../utils/dietPlanTemplate');
+
+// Lazy load Puppeteer (only when available)
+let puppeteer = null;
+try {
+  puppeteer = require('puppeteer');
+} catch (err) {
+  console.warn('⚠️ Puppeteer not available - PDF generation will be disabled');
+}
 
 // Configure Cloudinary
 cloudinary.config({
@@ -16,11 +23,23 @@ cloudinary.config({
   secure: true
 });
 
-// Generate PDF for diet plan
+// Generate PDF for diet plan (with Lambda-safe fallback)
 const generateDietPlanPDF = async (dietPlan) => {
+  // Check if Puppeteer is available
+  if (!puppeteer) {
+    console.log('PDF generation skipped - Puppeteer not available in this environment');
+    return null;
+  }
+
+  // Check if running in AWS Lambda
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    console.log('PDF generation skipped - Not supported in Lambda environment');
+    return null;
+  }
+
   let browser;
   try {
-    // Ensure Chrome is available (Render + Puppeteer v24+ needs browsers install at build time)
+    // Ensure Chrome is available
     let execPath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : undefined;
     if (execPath && !fs.existsSync(execPath)) {
       console.warn(`Puppeteer executablePath not found at ${execPath}. Falling back to default.`);
@@ -57,14 +76,12 @@ const generateDietPlanPDF = async (dietPlan) => {
     
     if (plainDietPlan.meals && Array.isArray(plainDietPlan.meals)) {
       plainDietPlan.meals = plainDietPlan.meals.map(meal => {
-        // Ensure meal has required properties
         meal = meal || {};
         meal.name = meal.name || 'Meal';
         meal.time = meal.time || '';
         meal.items = meal.items || [];
         meal.instructions = meal.instructions || '';
         
-        // Process items
         meal.items = meal.items.map(item => ({
           food: item.food || 'Food item',
           ingredients: item.ingredients || '',
@@ -73,7 +90,6 @@ const generateDietPlanPDF = async (dietPlan) => {
           protein: Number(item.protein) || 0
         }));
         
-        // Calculate totals
         meal.items.forEach(item => {
           totalCalories += item.calories || 0;
           totalProtein += item.protein || 0;
@@ -117,6 +133,7 @@ const generateDietPlanPDF = async (dietPlan) => {
       console.error('Cloudinary env vars missing. Skipping PDF upload.');
       throw new Error('Cloudinary configuration not set');
     }
+    
     const publicId = `diet-plans/plan_${dietPlan._id}_${Date.now()}`;
     
     const uploadResult = await new Promise((resolve, reject) => {
@@ -143,7 +160,7 @@ const generateDietPlanPDF = async (dietPlan) => {
     
   } catch (error) {
     console.error('generateDietPlanPDF error:', error?.message || error);
-    throw error;
+    return null; // Return null instead of throwing
   } finally {
     if (browser) {
       await browser.close();
@@ -153,10 +170,8 @@ const generateDietPlanPDF = async (dietPlan) => {
 
 // Helper function to process diet plan data
 const processDietPlanData = (data) => {
-  // Ensure meals is an array
   const meals = Array.isArray(data.meals) ? data.meals : [];
   
-  // Process each meal
   const processedMeals = meals.map(meal => ({
     name: meal.name || 'Meal',
     time: meal.time || '',
@@ -166,7 +181,7 @@ const processDietPlanData = (data) => {
       quantity: item.quantity || '',
       calories: Number(item.calories) || 0,
       protein: Number(item.protein) || 0,
-      ingredients: item.ingredients || ''  // Ensure ingredients is included
+      ingredients: item.ingredients || ''
     })) : []
   }));
 
@@ -176,7 +191,7 @@ const processDietPlanData = (data) => {
     duration: data.duration || '1 week',
     notes: data.notes || '',
     meals: processedMeals,
-    createdBy: data.createdBy || req.user?.id
+    createdBy: data.createdBy
   };
 };
 
@@ -193,7 +208,6 @@ const createDietPlan = async (req, res) => {
       });
     }
 
-    // Process the request data with defaults
     const processedData = processDietPlanData({
       ...req.body,
       createdBy: req.admin.adminId
@@ -202,7 +216,7 @@ const createDietPlan = async (req, res) => {
     const dietPlan = new DietPlan(processedData);
     await dietPlan.save();
 
-    // Generate PDF
+    // Try to generate PDF (will gracefully fail in Lambda)
     let pdfGenerated = false;
     try {
       const pdfResult = await generateDietPlanPDF(dietPlan);
@@ -214,15 +228,19 @@ const createDietPlan = async (req, res) => {
         pdfGenerated = true;
       }
     } catch (pdfError) {
-      console.error('PDF generation failed:', pdfError);
+      console.error('PDF generation failed:', pdfError.message);
+      // Continue without PDF - not critical
     }
 
     const populatedDietPlan = await DietPlan.findById(dietPlan._id).populate('createdBy', 'name');
 
     res.status(201).json({
       success: true,
-      message: `Diet plan created successfully${pdfGenerated ? ' with PDF' : ''}`,
-      dietPlan: populatedDietPlan
+      message: pdfGenerated 
+        ? 'Diet plan created successfully with PDF' 
+        : 'Diet plan created successfully (PDF generation unavailable)',
+      dietPlan: populatedDietPlan,
+      pdfAvailable: pdfGenerated
     });
 
   } catch (error) {
@@ -320,7 +338,7 @@ const updateDietPlan = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Calculate total calories and protein if meals are updated (RESTORED from working version)
+    // Calculate total calories and protein if meals are updated
     if (updateData.meals) {
       let totalCalories = 0;
       let totalProtein = 0;
@@ -344,7 +362,7 @@ const updateDietPlan = async (req, res) => {
       });
     }
 
-    // Regenerate PDF if content changed
+    // Try to regenerate PDF if content changed (will gracefully fail in Lambda)
     let pdfRegenerated = false;
     if (updateData.meals || updateData.title || updateData.notes) {
       try {
@@ -362,14 +380,18 @@ const updateDietPlan = async (req, res) => {
           pdfRegenerated = true;
         }
       } catch (pdfError) {
-        console.error('PDF regeneration error:', pdfError);
+        console.error('PDF regeneration error:', pdfError.message);
+        // Continue without PDF - not critical
       }
     }
 
     res.status(200).json({
       success: true,
-      message: `Diet plan updated successfully${pdfRegenerated ? ' with new PDF' : ''}`,
-      dietPlan
+      message: pdfRegenerated 
+        ? 'Diet plan updated successfully with new PDF' 
+        : 'Diet plan updated successfully (PDF generation unavailable)',
+      dietPlan,
+      pdfAvailable: pdfRegenerated
     });
   } catch (error) {
     console.error('Update diet plan error:', error);
