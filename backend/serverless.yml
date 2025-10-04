@@ -1,0 +1,47 @@
+service: focus-gym-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  timeout: 30
+  memorySize: 512
+  environment:
+    MONGODB_URI: ${env:MONGODB_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
+    MSG91_API_KEY: ${env:MSG91_API_KEY}
+    MSG91_TEMPLATE_ID: ${env:MSG91_TEMPLATE_ID}
+    MSG91_SENDER_ID: ${env:MSG91_SENDER_ID}
+    ADMIN_MOBILE: ${env:ADMIN_MOBILE}
+    CLOUDINARY_CLOUD_NAME: ${env:CLOUDINARY_CLOUD_NAME}
+    CLOUDINARY_API_KEY: ${env:CLOUDINARY_API_KEY}
+    CLOUDINARY_API_SECRET: ${env:CLOUDINARY_API_SECRET}
+    NODE_ENV: production
+
+functions:
+  api:
+    handler: server.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+      - httpApi:
+          path: /
+          method: ANY
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+package:
+  patterns:
+    - '!node_modules/puppeteer/**'
+    - '!node_modules/.cache/**'
+    - '!node_modules/chrome-aws-lambda/**'
+    - '!.git/**'
+    - '!.gitignore'
+    - '!README.md'
+    - '!.env.example'
+    - '!tests/**'
+    - '!.vscode/**'
+    - '!node_modules/aws-sdk/**'

@@ -29,9 +29,11 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^6.9.4",
     "puppeteer": "^24.9.0",
+    "serverless-http": "^4.0.0",
     "twilio": "^4.15.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "serverless-dotenv-plugin": "^6.0.0"
   }
 }
