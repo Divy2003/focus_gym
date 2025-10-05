@@ -1,3 +1,7 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: divypatel
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: focus-api
 service: focus-gym-api
 
 provider:
