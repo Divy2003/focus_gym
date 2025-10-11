@@ -74,6 +74,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://focus-gym.onrender.com',
   'https://focus-gym-api.onrender.com',
+  'http://localhost:5000',
   'http://localhost:3000',
   'https://main.d2s7d4hmm9cork.amplifyapp.com',
   'https://o5gqinqhb4.execute-api.us-east-1.amazonaws.com'
@@ -103,9 +104,9 @@ app.get('/', (req, res) => {
     success: true,
     message: 'Focus Gym API is live 🚀',
     time: new Date().toISOString(),
+    environment: process.env.AWS_LAMBDA_FUNCTION_NAME ? 'AWS Lambda' : 'Local/Server'
   });
 });
-
 
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
@@ -190,7 +191,21 @@ const connectDB = async () => {
 // Connect to database on startup
 connectDB().catch(err => console.error('Initial connection failed:', err));
 
-// Lambda handler with connection reuse
+// ============================================
+// LOCAL SERVER SETUP (for development/testing)
+// ============================================
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Local URL: http://localhost:${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+// ============================================
+// LAMBDA HANDLER (for AWS Lambda deployment)
+// ============================================
 module.exports.handler = async (event, context) => {
   // Prevent Lambda from waiting for event loop to be empty (allows connection reuse)
   context.callbackWaitsForEmptyEventLoop = false;

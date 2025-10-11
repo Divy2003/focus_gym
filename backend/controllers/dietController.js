@@ -1,19 +1,9 @@
-// controllers/dietController.js
 const DietPlan = require('../models/DietPlan');
 const cloudinary = require('cloudinary').v2;
 const handlebars = require('handlebars');
-const fs = require('fs');
-const path = require('path');
 const { validationResult } = require('express-validator');
 const { dietPlanTemplate } = require('../utils/dietPlanTemplate');
-
-// Lazy load Puppeteer (only when available)
-let puppeteer = null;
-try {
-  puppeteer = require('puppeteer');
-} catch (err) {
-  console.warn('⚠️ Puppeteer not available - PDF generation will be disabled');
-}
+const { generatePDF, isPDFGenerationAvailable } = require('../utils/pdfGenerator');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -23,43 +13,16 @@ cloudinary.config({
   secure: true
 });
 
-// Generate PDF for diet plan (with Lambda-safe fallback)
+// Generate PDF for diet plan (works in both local and Lambda)
 const generateDietPlanPDF = async (dietPlan) => {
-  // Check if Puppeteer is available
-  if (!puppeteer) {
-    console.log('PDF generation skipped - Puppeteer not available in this environment');
+  // Check if PDF generation is available
+  if (!isPDFGenerationAvailable()) {
+    console.log('⚠️ PDF generation not available in this environment');
     return null;
   }
 
-  // Check if running in AWS Lambda
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    console.log('PDF generation skipped - Not supported in Lambda environment');
-    return null;
-  }
-
-  let browser;
   try {
-    // Ensure Chrome is available
-    let execPath = typeof puppeteer.executablePath === 'function' ? puppeteer.executablePath() : undefined;
-    if (execPath && !fs.existsSync(execPath)) {
-      console.warn(`Puppeteer executablePath not found at ${execPath}. Falling back to default.`);
-      execPath = undefined;
-    }
-
-    browser = await puppeteer.launch({
-      headless: true,
-      executablePath: execPath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
-    });
-    
-    const page = await browser.newPage();
+    console.log('📋 Starting PDF generation for diet plan:', dietPlan._id);
     
     // Compile template
     const template = handlebars.compile(dietPlanTemplate, {
@@ -112,12 +75,9 @@ const generateDietPlanPDF = async (dietPlan) => {
     
     const html = template(templateData);
     
-    await page.setContent(html, { 
-      waitUntil: 'networkidle0',
-      timeout: 30000 
-    });
-    
-    const pdfBuffer = await page.pdf({
+    // Generate PDF using environment-aware function
+    console.log('🖨️ Generating PDF...');
+    const pdfBuffer = await generatePDF(html, {
       format: 'A4',
       printBackground: true,
       margin: {
@@ -130,12 +90,12 @@ const generateDietPlanPDF = async (dietPlan) => {
     
     // Upload to Cloudinary
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.error('Cloudinary env vars missing. Skipping PDF upload.');
       throw new Error('Cloudinary configuration not set');
     }
     
     const publicId = `diet-plans/plan_${dietPlan._id}_${Date.now()}`;
     
+    console.log('☁️ Uploading PDF to Cloudinary...');
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
@@ -147,9 +107,10 @@ const generateDietPlanPDF = async (dietPlan) => {
         },
         (error, result) => {
           if (error) {
-            console.error('Cloudinary upload_stream error:', error?.message || error);
+            console.error('Cloudinary upload error:', error?.message || error);
             reject(error);
           } else {
+            console.log('✅ PDF uploaded successfully');
             resolve(result);
           }
         }
@@ -159,12 +120,8 @@ const generateDietPlanPDF = async (dietPlan) => {
     return uploadResult;
     
   } catch (error) {
-    console.error('generateDietPlanPDF error:', error?.message || error);
-    return null; // Return null instead of throwing
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
+    console.error('❌ generateDietPlanPDF error:', error?.message || error);
+    return null; // Return null instead of throwing to not break the flow
   }
 };
 
@@ -216,7 +173,7 @@ const createDietPlan = async (req, res) => {
     const dietPlan = new DietPlan(processedData);
     await dietPlan.save();
 
-    // Try to generate PDF (will gracefully fail in Lambda)
+    // Generate PDF (works in both local and Lambda)
     let pdfGenerated = false;
     try {
       const pdfResult = await generateDietPlanPDF(dietPlan);
@@ -247,7 +204,8 @@ const createDietPlan = async (req, res) => {
     console.error('Create diet plan error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create diet plan'
+      message: 'Failed to create diet plan',
+      error: error.message
     });
   }
 };
@@ -362,7 +320,7 @@ const updateDietPlan = async (req, res) => {
       });
     }
 
-    // Try to regenerate PDF if content changed (will gracefully fail in Lambda)
+    // Regenerate PDF if content changed
     let pdfRegenerated = false;
     if (updateData.meals || updateData.title || updateData.notes) {
       try {
@@ -389,7 +347,7 @@ const updateDietPlan = async (req, res) => {
       success: true,
       message: pdfRegenerated 
         ? 'Diet plan updated successfully with new PDF' 
-        : 'Diet plan updated successfully (PDF generation unavailable)',
+        : 'Diet plan updated successfully',
       dietPlan,
       pdfAvailable: pdfRegenerated
     });
