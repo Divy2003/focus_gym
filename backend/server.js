@@ -15,7 +15,7 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-// Non-fatal check for Cloudinary env vars (PDF generation will rely on these)
+// Non-fatal check for Cloudinary env vars
 const missingCloudinary = cloudinaryEnvVars.filter(varName => !process.env[varName]);
 if (missingCloudinary.length > 0) {
   console.warn(
@@ -32,7 +32,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const cron = require('node-cron');
 const serverless = require('serverless-http');
 
 const authRoutes = require('./routes/authRoutes');
@@ -40,7 +39,6 @@ const memberRoutes = require('./routes/memberRoutes');
 const dietRoutes = require('./routes/dietRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const transformationsRoutes = require('./routes/transformationsRoutes');
-const Member = require('./models/Member');
 
 const app = express();
 
@@ -57,14 +55,12 @@ const limiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  // Custom key generator to handle API Gateway proxy
   keyGenerator: (req) => {
     return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
            req.headers['x-real-ip'] || 
            req.ip || 
            'unknown';
   },
-  // Skip failed requests
   skipFailedRequests: true
 });
 app.use(limiter);
@@ -82,7 +78,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
@@ -165,23 +160,8 @@ const connectDB = async () => {
     // Run admin seeder
     require('./seeders/adminSeeder');
     
-    // Setup cron job for daily member expiry check (only in non-Lambda environment)
-    if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-      cron.schedule('5 0 * * *', async () => {
-        try {
-          console.log('Running daily member expiry check...');
-          const result = await Member.updateExpiredMembers();
-          const modified = result?.modifiedCount ?? result?.nModified ?? 0;
-          console.log(`Expired members updated: ${modified}`);
-        } catch (error) {
-          console.error('Cron job error:', error);
-        }
-      }, {
-        timezone: "Asia/Kolkata"
-      });
-      
-      console.log('Daily expiry cron job scheduled for 12:05 AM IST');
-    }
+    // REMOVED: node-cron setup (now handled by EventBridge)
+    console.log('ℹ️ Member expiry check is managed by AWS EventBridge scheduler');
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     throw err;
@@ -200,6 +180,7 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Local URL: http://localhost:${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`⚠️ Note: In local mode, run manual expiry checks via API endpoint`);
   });
 }
 
@@ -207,13 +188,8 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 // LAMBDA HANDLER (for AWS Lambda deployment)
 // ============================================
 module.exports.handler = async (event, context) => {
-  // Prevent Lambda from waiting for event loop to be empty (allows connection reuse)
   context.callbackWaitsForEmptyEventLoop = false;
-  
-  // Ensure database connection before handling request
   await connectDB();
-  
-  // Use serverless-http to handle the request
   const handler = serverless(app);
   return handler(event, context);
 };

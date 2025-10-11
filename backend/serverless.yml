@@ -6,8 +6,8 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
-  timeout: 60  # Increased for PDF generation
-  memorySize: 1024  # Increased for Chromium
+  timeout: 60
+  memorySize: 1024
   httpApi:
     payload: '2.0'
     cors: false
@@ -27,7 +27,6 @@ functions:
   api:
     handler: server.handler
     layers:
-      # Chromium Lambda Layer for PDF generation
       - arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:50
     events:
       - httpApi:
@@ -36,6 +35,17 @@ functions:
       - httpApi:
           path: /
           method: ANY
+
+  # Scheduled function for member expiry check
+  memberExpiryScheduler:
+    handler: schedulers/memberExpiryScheduler.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - schedule:
+          rate: cron(5 18 * * ? *)  # Runs at 12:05 AM IST (6:05 PM UTC + 5:30 = 12:05 AM IST)
+          description: 'Daily member expiry check at 12:05 AM IST'
+          enabled: true
 
 plugins:
   - serverless-dotenv-plugin
