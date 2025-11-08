@@ -73,6 +73,7 @@ const allowedOrigins = [
   'http://localhost:5000',
   'http://localhost:3000',
   'https://main.d2s7d4hmm9cork.amplifyapp.com',
+  'https://aws.d2s7d4hmm9cork.amplifyapp.com',
   'https://o5gqinqhb4.execute-api.us-east-1.amazonaws.com'
 ];
 
