@@ -79,7 +79,7 @@ button:hover:not(:disabled) {
 }
 
 .error-message {
-  color: var(--error-color);
+ 
   margin-bottom: 1rem;
 }
 

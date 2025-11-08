@@ -115,7 +115,7 @@ const Dashboard = () => {
         <div className="stats-grid">
           <StatCard icon={Users} title="Total Members" value={dashboardData.totalMembers || 0} color="blue" />
           <StatCard icon={UserCheck} title="Active Members" value={dashboardData.approvedMembers || 0} subtext="Approved & Paying" color="green" />
-          <StatCard icon={IndianRupee} title="Monthly Revenue" value={`₹${(dashboardData.totalRevenue || 0).toLocaleString()}`} color="emerald" trend="+12% from last month" />
+          <StatCard icon={IndianRupee} title="Total Revenue" value={`₹${(dashboardData.totalRevenue || 0).toLocaleString()}`} color="emerald"  />
           <StatCard icon={BookOpen} title="Diet Plans" value={dashboardData.totalDietPlans || 0} subtext="Available plans" color="purple" />
         </div>
 
