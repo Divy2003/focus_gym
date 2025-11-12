@@ -1,15 +1,18 @@
 const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
-const { sendOTPViaMSG91, sendOTPViaSMS } = require("../utils/msg91Otp");
 
-// Generate OTP
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+// Generate JWT Token
+const generateToken = (admin) => {
+  return jwt.sign(
+    { id: admin._id, mobile: admin.mobile },
+    process.env.JWT_SECRET || 'your_jwt_secret',
+    { expiresIn: '24h' }
+  );
 };
 
-// Send OTP
-const sendOTP = async (req, res) => {
+// Login with mobile and password
+const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -20,136 +23,133 @@ const sendOTP = async (req, res) => {
       });
     }
 
-    const { mobile } = req.body;
+    const { mobile, password } = req.body;
 
     // Check if admin exists
-    const admin = await Admin.findOne({ mobile });
+    const admin = await Admin.findOne({ mobile }).select('+password');
     if (!admin) {
-      return res.status(404).json({
+      return res.status(401).json({
         success: false,
-        message: "Unauthorized mobile number",
+        message: "Invalid credentials",
       });
     }
 
-    const otp = generateOTP();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // OTP valid 10 mins
+    // Check if account is active
+    if (!admin.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is deactivated",
+      });
+    }
 
-    // Save OTP in DB
-    admin.otp = {
-      code: otp,
-      expiresAt,
-    };
+    // Verify password
+    const isMatch = await admin.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Update last login
+    admin.lastLogin = new Date();
     await admin.save();
 
-    // --- Send OTP using MSG91 ---
-    const cleanMobile = mobile.replace(/\D/g, '');
-    
-    try {
-      // Try Flow API first
-      await sendOTPViaMSG91(cleanMobile, otp);
-      console.log(`OTP sent via Flow API to ${mobile}: ${otp}`);
-    } catch (flowError) {
-      console.log('Flow API failed, trying SMS API:', flowError.message);
-      
-      try {
-        // Fallback to SMS API
-        await sendOTPViaSMS(cleanMobile, otp);
-        console.log(`OTP sent via SMS API to ${mobile}: ${otp}`);
-      } catch (smsError) {
-        console.error('Both MSG91 methods failed:', smsError.message);
-        // Don't fail the request - OTP is logged for development
-        console.log(`FALLBACK - OTP for ${mobile}: ${otp} (valid till ${expiresAt})`);
-      }
-    }
+    // Generate token
+    const token = generateToken(admin);
 
-    // Also log OTP in console (useful in dev/testing)
-    console.log(`OTP for ${mobile}: ${otp} (valid till ${expiresAt})`);
-
-    res.status(200).json({
-      success: true,
-      message: "OTP sent successfully",
-      //otp: process.env.NODE_ENV === "development" ? otp : undefined,
-      // Include OTP in response so client can display it on the verify page when needed
-      otp,
-    });
-  } catch (error) {
-    console.error("Send OTP error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to send OTP",
-    });
-  }
-};
-
-// Verify OTP + Login (unchanged)
-const verifyOTP = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation errors",
-        errors: errors.array(),
-      });
-    }
-
-    const { mobile, otp } = req.body;
-
-    const admin = await Admin.findOne({ mobile });
-    if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: "Admin not found",
-      });
-    }
-
-    // Validate OTP
-    if (!admin.otp?.code || admin.otp.expiresAt < new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expired or invalid",
-      });
-    }
-
-    if (admin.otp.code !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
-    }
-
-    // OTP verified -> clear it
-    admin.otp = undefined;
-    await admin.save();
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { adminId: admin._id, mobile: admin.mobile },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    // Omit password from response
+    const adminData = admin.toObject();
+    delete adminData.password;
 
     res.status(200).json({
       success: true,
       message: "Login successful",
       token,
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        mobile: admin.mobile,
-      },
+      admin: adminData,
     });
   } catch (error) {
-    console.error("Verify OTP error:", error);
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: "Login failed",
+      message: "Login failed. Please try again.",
+    });
+  }
+};
+
+// Change password
+const changePassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const admin = await Admin.findById(req.user.id).select('+password');
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isMatch = await admin.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Update password
+    admin.password = newPassword;
+    await admin.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update password",
+    });
+  }
+};
+
+// Get current user
+const getMe = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('-password');
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: admin,
+    });
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user data",
     });
   }
 };
 
 module.exports = {
-  sendOTP,
-  verifyOTP,
+  login,
+  changePassword,
+  getMe,
 };

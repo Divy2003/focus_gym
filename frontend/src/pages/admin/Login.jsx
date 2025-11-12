@@ -1,99 +1,73 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useSendOtpMutation, useVerifyOtpMutation } from '../../redux/api/authApi';
+import { useLoginMutation } from '../../redux/api/authApi';
 import { setCredentials } from '../../redux/slices/authSlice';
 import '../../styles/admin/Login.css';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [mobile, setMobile] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState(1); // 1 for mobile, 2 for otp
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [mobileForVerification, setMobileForVerification] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const from = location.state?.from?.pathname || '/admin/dashboard';
 
-  // Debug: Log the navigation state
+  const [login, { isLoading }] = useLoginMutation();
+
+  // Clear any previous errors when component mounts
   useEffect(() => {
-    console.log('Login page location state:', location.state);
-    console.log('Redirecting after login to:', from);
-  }, [location.state, from]);
+    setError('');
+  }, [location.state]);
 
-  const [sendOtp, { isLoading: isSendingOtp }] = useSendOtpMutation();
-  const [verifyOtp, { isLoading: isVerifyingOtp }] = useVerifyOtpMutation();
+  const handleMobileChange = (e) => {
+    // Allow only numbers and limit to 10 digits
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setMobile(value);
+  };
 
-  const handleSendOtp = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     
-    // Clean mobile number (remove non-digits and ensure it's 10 digits)
-    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-    
-    if (cleanMobile.length !== 10) {
+    if (!mobile || mobile.length !== 10) {
       setError('Please enter a valid 10-digit mobile number');
       return;
     }
     
-    try {
-      const response = await sendOtp(cleanMobile).unwrap();
-      console.log('OTP Response:', response);
-      
-      if (response.success) {
-        setMobileForVerification(cleanMobile);
-        // If the backend returns the OTP in development mode, store it to display
-        if (response.otp) {
-          setGeneratedOtp(response.otp);
-        }
-        setStep(2);
-      } else {
-        setError(response.message || 'Failed to send OTP');
-      }
-    } catch (err) {
-      console.error('OTP Error:', err);
-      setError(err.message || 'Failed to send OTP');
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    if (otp.length !== 6) {
-      setError('OTP must be 6 digits');
+    if (!password) {
+      setError('Please enter your password');
       return;
     }
     
     try {
-      const response = await verifyOtp({ mobile: mobileForVerification, otp }).unwrap();
-      console.log('Verify OTP Response:', response);
+      const response = await login({ mobile, password }).unwrap();
       
-      if (response.success && response.token) {
-        // Store the token in localStorage and update Redux store
+      if (response.success) {
+        // Store the token and admin data in localStorage and Redux store
         localStorage.setItem('token', response.token);
         localStorage.setItem('admin', JSON.stringify(response.admin));
+        
         dispatch(setCredentials({ 
           token: response.token,
           admin: response.admin 
         }));
         
-        // Clear form and navigate to the intended location or dashboard
-        setOtp('');
+        // Navigate to the intended location or dashboard
         setMobile('');
+        setPassword('');
         console.log('Login successful, navigating to:', from);
         navigate(from, { replace: true });
       } else {
-        setError(response.message || 'Invalid OTP');
+        setError(response.message || 'Login failed');
       }
     } catch (err) {
-      console.error('Verify OTP Error:', err);
-      setError(err.message || 'Invalid OTP');
+      console.error('Login Error:', err);
+      setError(err.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -102,72 +76,48 @@ const Login = () => {
       <div className="login-box">
         <h2>Admin Login</h2>
         {error && <p className="error-message">{error}</p>}
-        {step === 1 ? (
-          <form onSubmit={handleSendOtp}>
-            <div className="input-group">
-              <label htmlFor="mobile">Mobile Number</label>
+        <form onSubmit={handleLogin}>
+          <div className="input-group">
+            <label htmlFor="mobile">Mobile Number</label>
+            <input
+              type="text"
+              id="mobile"
+              value={mobile}
+              onChange={handleMobileChange}
+              placeholder="Enter 10-digit mobile number"
+              inputMode="numeric"
+              disabled={isLoading}
+              required
+            />
+          </div>
+          
+          <div className="input-group">
+            <label htmlFor="password">Password</label>
+            <div className="password-input-container">
               <input
-                type="text"
-                id="mobile"
-                value={mobile}
-                onChange={(e) => {
-                  // Only allow numbers and limit to 10 digits
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  setMobile(value);
-                }}
-                placeholder="Enter 10-digit mobile number"
-                inputMode="numeric"
-                disabled={isSendingOtp}
+                type='text'
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                disabled={isLoading}
                 required
               />
+             
             </div>
-            <button type="submit" disabled={isSendingOtp}>
-              {isSendingOtp ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> Sending...
-                </>
-              ) : (
-                'Send OTP'
-              )}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp}>
-            <div className="input-group">
-              <label htmlFor="otp">Enter OTP</label>
-              {generatedOtp && (
-                <div className="otp-display">
-                  <p><strong>{generatedOtp}</strong></p>
-                </div>
-              )}
-              <input
-                type="text"
-                id="otp"
-                value={otp}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  if (value.length <= 6) {
-                    setOtp(value);
-                  }
-                }}
-                placeholder="6-digit OTP"
-                maxLength={6}
-                inputMode="numeric"
-                disabled={isVerifyingOtp}
-                required
-              />
-            </div>
-            <button type="submit" disabled={isVerifyingOtp}>
-              {isVerifyingOtp ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> Verifying...
-                </>
-              ) : (
-                'Verify & Login'
-              )}
-            </button>
-          </form>
-        )}
+          </div>
+          
+          <button type="submit" disabled={isLoading} className="login-button">
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> 
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );

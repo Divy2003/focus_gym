@@ -129,40 +129,55 @@ app.use('*', (req, res) => {
 });
 
 // MongoDB connection with connection pooling for Lambda
-let isConnected = false;
+let cachedDb = null;
 
 const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) {
+  // Return cached connection if available and connected
+  if (cachedDb && mongoose.connection.readyState === 1) {
     console.log('⚡ Using existing MongoDB connection');
-    return;
+    return cachedDb;
   }
 
   console.log('🔄 Attempting to connect to MongoDB...');
-  console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Found (hidden for security)' : 'Not found');
-  console.log('Cloudinary config:', {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'missing',
-    api_key: process.env.CLOUDINARY_API_KEY ? 'set' : 'missing',
-    api_secret: process.env.CLOUDINARY_API_SECRET ? 'set' : 'missing'
-  });
+  
+  // Log environment status without sensitive data
+  console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Found' : 'Not found');
+  
+  const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 3000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 5, // Lower for Lambda
+    minPoolSize: 1,
+    heartbeatFrequencyMS: 10000,
+    retryWrites: true,
+    retryReads: true,
+  };
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
-    });
+    // Close any existing connections
+    if (mongoose.connection) {
+      await mongoose.connection.close();
+    }
     
-    isConnected = true;
+    // Create new connection
+    const conn = await mongoose.connect(process.env.MONGODB_URI, options);
+    
+    // Cache the connection
+    cachedDb = conn;
     console.log('✅ Successfully connected to MongoDB');
     
-    // Run admin seeder
-    require('./seeders/adminSeeder');
+    // Only run admin seeder if not in production or if explicitly enabled
+    if (process.env.RUN_SEED === 'true' || process.env.NODE_ENV !== 'production') {
+      try {
+        await require('./seeders/adminSeeder')();
+      } catch (seederError) {
+        console.error('❌ Admin seeder error:', seederError);
+      }
+    }
     
-    // REMOVED: node-cron setup (now handled by EventBridge)
-    console.log('ℹ️ Member expiry check is managed by AWS EventBridge scheduler');
+    return conn;
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     throw err;
@@ -188,9 +203,36 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 // ============================================
 // LAMBDA HANDLER (for AWS Lambda deployment)
 // ============================================
+let serverlessHandler;
+
 module.exports.handler = async (event, context) => {
+  // Don't wait for empty event loop to keep the connection alive for reuse
   context.callbackWaitsForEmptyEventLoop = false;
-  await connectDB();
-  const handler = serverless(app);
-  return handler(event, context);
+  
+  try {
+    // Connect to database
+    await connectDB();
+    
+    // Cache the serverless handler
+    if (!serverlessHandler) {
+      serverlessHandler = serverless(app);
+    }
+    
+    // Process the request
+    const result = await serverlessHandler(event, context);
+    
+    // Close any file handles or other resources here if needed
+    
+    return result;
+  } catch (error) {
+    console.error('Lambda handler error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ 
+        success: false, 
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'production' ? null : error.message 
+      })
+    };
+  }
 };

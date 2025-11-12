@@ -80,7 +80,9 @@ const AdminLayout = () => {
 
       <aside ref={sidebarRef} className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <h2>Focus Gym</h2>
+          <Link to="/" className="home-link" onClick={closeSidebar}>
+            <h2>Focus Gym</h2>
+          </Link>
         </div>
         <nav className="sidebar-nav">
           <Link to="/admin/dashboard" onClick={closeSidebar}>Dashboard</Link>

@@ -14,46 +14,60 @@ export const authApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ['Auth'],
   endpoints: (builder) => ({
-    sendOtp: builder.mutation({
-      query: (mobile) => {
-        // Remove any non-digit characters and ensure it's a 10-digit number
-        const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-        return {
-          url: '/send-otp',
-          method: 'POST',
-          body: { mobile: `+91${cleanMobile}` },
-        };
-      },
-      transformResponse: (response, meta, arg) => {
-        console.log('Raw sendOtp response:', response);
+    login: builder.mutation({
+      query: (credentials) => ({
+        url: '/login',
+        method: 'POST',
+        body: {
+          mobile: `+91${credentials.mobile.replace(/\D/g, '').slice(-10)}`,
+          password: credentials.password
+        },
+      }),
+      transformResponse: (response) => {
+        console.log('Login successful:', response);
         return response;
       },
-      transformErrorResponse: (response, meta, arg) => {
-        console.error('Send OTP error:', response);
-        return response.data || { message: 'Failed to send OTP' };
+      transformErrorResponse: (response) => {
+        console.error('Login error:', response);
+        return response.data || { message: 'Login failed. Please check your credentials.' };
+      },
+      invalidatesTags: ['Auth'],
+    }),
+    changePassword: builder.mutation({
+      query: (passwords) => ({
+        url: '/change-password',
+        method: 'POST',
+        body: passwords,
+      }),
+      transformResponse: (response) => {
+        console.log('Password changed successfully');
+        return response;
+      },
+      transformErrorResponse: (response) => {
+        console.error('Change password error:', response);
+        return response.data || { message: 'Failed to change password' };
       },
     }),
-    verifyOtp: builder.mutation({
-      query: ({ mobile, otp }) => {
-        // Remove any non-digit characters and ensure it's a 10-digit number
-        const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-        return {
-          url: '/verify-otp',
-          method: 'POST',
-          body: { mobile: `+91${cleanMobile}`, otp },
-        };
-      },
-      transformResponse: (response, meta, arg) => {
-        console.log('Raw verifyOtp response:', response);
+    getMe: builder.query({
+      query: () => '/me',
+      providesTags: ['Auth'],
+      transformResponse: (response) => {
+        console.log('Current user:', response);
         return response;
       },
-      transformErrorResponse: (response, meta, arg) => {
-        console.error('Verify OTP error:', response);
-        return response.data || { message: 'Failed to verify OTP' };
+      transformErrorResponse: (response) => {
+        console.error('Get user error:', response);
+        return response.data || { message: 'Failed to fetch user data' };
       },
     }),
   }),
 });
 
-export const { useSendOtpMutation, useVerifyOtpMutation } = authApi;
+export const { 
+  useLoginMutation, 
+  useChangePasswordMutation,
+  useGetMeQuery,
+  useLazyGetMeQuery 
+} = authApi;

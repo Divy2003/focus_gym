@@ -331,8 +331,8 @@ const HomePage = () => {
               <Phone size={24} color="var(--primary-red)" />
               <h3>Call Us</h3>
               <p>
-                <a href="tel:+1234567890">+91 9913078721</a><br />
-                <a href="tel:+1234567891">+91 9913078721</a>
+                <a href="tel:+1234567890">+91 9913078721</a>
+               
               </p>
             </div>
 

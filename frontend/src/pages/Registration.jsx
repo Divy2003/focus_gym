@@ -9,7 +9,8 @@ const RegistrationForm = () => {
     mobile: '',
     month: '',
     fees: '',
-    description: ''
+    description: '',
+    startDate: ''
   });
 
   // UI state
@@ -71,11 +72,9 @@ const RegistrationForm = () => {
     }
 
     if (name === 'fees') {
-      // Only allow admins to modify fees and see price display
-      if (isAdmin) {
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setShowPriceDisplay(value && parseInt(value) > 0);
-      }
+      // Allow all users to modify fees
+      setFormData(prev => ({ ...prev, [name]: value }));
+      setShowPriceDisplay(value && parseInt(value) > 0);
       return;
     }
 
@@ -90,7 +89,7 @@ const RegistrationForm = () => {
     setShowSuccess(false);
 
     try {
-      if (!formData.name.trim() || !formData.mobile.trim() || !formData.month) {
+      if (!formData.name.trim() || !formData.mobile.trim() || !formData.month || !formData.startDate) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -104,8 +103,9 @@ const RegistrationForm = () => {
         name: formData.name.trim(),
         mobile: `+91${cleanMobile}`,
         month: parseInt(formData.month),
-        fees: isAdmin ? (parseFloat(formData.fees) || 0) : 0,
-        description: formData.description.trim()
+        fees: parseFloat(formData.fees) || 0,
+        description: formData.description.trim(),
+        joiningDate: new Date(formData.startDate).toISOString()
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/members`, {
@@ -119,7 +119,7 @@ const RegistrationForm = () => {
       if (!response.ok) throw new Error(result.message || 'Registration failed');
 
       setShowSuccess(true);
-      setFormData({ name: '', mobile: '', month: '', fees: '', description: '' });
+      setFormData({ name: '', mobile: '', month: '', fees: '', description: '', startDate: '' });
       setShowPriceDisplay(false);
 
       setTimeout(() => setShowSuccess(false), 5000);
@@ -189,6 +189,19 @@ const RegistrationForm = () => {
             />
           </div>
 
+          {/* Start Date */}
+          <div>
+            <label htmlFor="startDate">Start Date *</label>
+            <input
+              type="date"
+              id="startDate"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
           {/* Membership */}
           <div className="form-row-responsive">
             <div>
@@ -209,7 +222,7 @@ const RegistrationForm = () => {
               </select>
             </div>
 
-            {isAdmin && (
+            
               <div>
                 <label htmlFor="fees">Membership Fees </label>
                 <input
@@ -223,7 +236,7 @@ const RegistrationForm = () => {
                   step="100"
                 />
               </div>
-            )}
+          
           </div>
 
           {/* Price Display */}

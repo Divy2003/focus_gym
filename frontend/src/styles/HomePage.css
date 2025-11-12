@@ -517,7 +517,7 @@ body {
 }
 
 .contact-item a {
-  color: var(--primary-red);
+  color: var(--gray-300);
   text-decoration: none;
   transition: var(--transition-normal);
 }
