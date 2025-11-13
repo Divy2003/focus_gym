@@ -1,7 +1,6 @@
 // seeders/adminSeeder.js
 const mongoose = require('mongoose');
 const Admin = require('../models/Admin');
-const bcrypt = require('bcryptjs');
 
 // Get admin credentials from environment variables with validation
 const getAdminConfig = () => {
@@ -39,14 +38,13 @@ const seedAdmin = async () => {
     let message = 'Admin already exists';
 
     if (!existingAdmin) {
-      // Create new admin with hashed password
+      // Create new admin - let the model's pre-save hook handle password hashing
       console.log('👤 Creating new admin user...');
-      const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN.password, 10);
       
       const admin = new Admin({
         name: DEFAULT_ADMIN.name,
         mobile: DEFAULT_ADMIN.mobile,
-        password: hashedPassword,
+        password: DEFAULT_ADMIN.password, // Don't hash here, let the model do it
         isActive: true,
         lastLogin: new Date()
       });
@@ -61,7 +59,7 @@ const seedAdmin = async () => {
     // Update existing admin if no password set (migrating from OTP)
     else if (!existingAdmin.password) {
       console.log('🔄 Updating existing admin with password...');
-      existingAdmin.password = await bcrypt.hash(DEFAULT_ADMIN.password, 10);
+      existingAdmin.password = DEFAULT_ADMIN.password; // Don't hash here, let the model do it
       existingAdmin.lastLogin = new Date();
       await existingAdmin.save({ session });
       
