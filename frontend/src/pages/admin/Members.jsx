@@ -3,24 +3,24 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaWhatsapp } from "react-icons/fa";
 
-import { 
-  useGetMembersQuery, 
-  useAddMemberMutation, 
-  useUpdateMemberMutation, 
+import {
+  useGetMembersQuery,
+  useAddMemberMutation,
+  useUpdateMemberMutation,
   useDeleteMemberMutation,
   useBulkDeleteMembersMutation
 } from '../../redux/api/gymApi';
-import { 
-  setFilters, 
-  setSelectedMembers, 
-  toggleMemberSelection, 
-  selectAllMembers, 
+import {
+  setFilters,
+  setSelectedMembers,
+  toggleMemberSelection,
+  selectAllMembers,
   clearSelectedMembers,
   setShowAddModal,
   setShowEditModal,
   setEditingMember
 } from '../../redux/slices/membersSlice.js';
-import { 
+import {
   Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle
 } from 'lucide-react';
 import UpdateMemberModalFixed from '../../components/admin/UpdateMemberModalFixed';
@@ -35,7 +35,7 @@ const MembersPage = () => {
   };
   const dispatch = useDispatch();
   const { selectedMembers = [], filters, showAddModal, showEditModal, editingMember } = useSelector(state => state.members);
-  
+
   const { data: membersData, isLoading, error, refetch } = useGetMembersQuery(filters);
   const [addMember, { isLoading: isAdding }] = useAddMemberMutation();
   const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
@@ -45,13 +45,13 @@ const MembersPage = () => {
   const members = membersData?.members || [];
   const pagination = membersData?.pagination || {};
 
-  const [memberForm, setMemberForm] = useState({ 
-    name: '', 
-    mobile: '', 
-    month: 1, 
-    fees: 0, 
+  const [memberForm, setMemberForm] = useState({
+    name: '',
+    mobile: '',
+    month: 1,
+    fees: 0,
     description: '',
-    status: 'pending' 
+    status: 'pending'
   });
 
   useEffect(() => {
@@ -65,13 +65,13 @@ const MembersPage = () => {
         status: editingMember.status || 'pending'
       });
     } else {
-      setMemberForm({ 
-        name: '', 
-        mobile: '', 
-        month: 1, 
-        fees: 0, 
+      setMemberForm({
+        name: '',
+        mobile: '',
+        month: 1,
+        fees: 0,
         description: '',
-        status: 'pending' 
+        status: 'pending'
       });
     }
   }, [showEditModal, editingMember]);
@@ -102,17 +102,17 @@ const MembersPage = () => {
     try {
       // Create update data without status if it's a fee update for a pending member
       const updateData = { ...memberForm };
-      
+
       // If the member was pending and we're updating fees, don't include status in the update
       if (editingMember?.status === 'pending' && memberForm.fees > 0) {
         delete updateData.status; // Let the backend handle status update based on fees
       }
-      
-      await updateMember({ 
-        id: editingMember._id, 
-        ...updateData 
+
+      await updateMember({
+        id: editingMember._id,
+        ...updateData
       }).unwrap();
-      
+
       dispatch(setShowEditModal(false));
       refetch();
     } catch (err) {
@@ -124,17 +124,17 @@ const MembersPage = () => {
   const handleFixedModalUpdate = async (memberId, formData) => {
     try {
       const updateData = { ...formData };
-      
+
       // If the member was pending and we're updating fees, don't include status in the update
       if (editingMember?.status === 'pending' && formData.fees > 0) {
         delete updateData.status;
       }
-      
-      await updateMember({ 
-        id: memberId, 
-        ...updateData 
+
+      await updateMember({
+        id: memberId,
+        ...updateData
       }).unwrap();
-      
+
       dispatch(setShowEditModal(false));
       refetch();
     } catch (err) {
@@ -176,10 +176,10 @@ const MembersPage = () => {
       expiring: { class: 'expiring', icon: Clock, label: `Expiring in ${member?.daysUntilExpiry || 'a few'} days` },
       expired: { class: 'expired', icon: XCircle, label: 'Expired' }
     };
-    
+
     const config = statusConfig[status] || statusConfig.pending;
     const StatusIcon = config.icon;
-    
+
     return (
       <span className={`status-badge ${config.class}`} title={config.label}>
         <StatusIcon size={12} />
@@ -192,28 +192,28 @@ const MembersPage = () => {
     // Handle ESC key to close modal
     useEffect(() => {
       if (!isOpen) return;
-      
+
       const handleEscKey = (e) => {
         if (e.key === 'Escape') {
           onClose();
         }
       };
-      
+
       document.addEventListener('keydown', handleEscKey);
       return () => {
         document.removeEventListener('keydown', handleEscKey);
       };
     }, [isOpen, onClose]);
-    
+
     if (!isOpen) return null;
-    
+
     const handleOverlayClick = (e) => {
       // Only close if clicking directly on the overlay, not on the modal content
       if (e.target === e.currentTarget) {
         onClose();
       }
     };
-    
+
     return (
       <div className="modal-overlay" onClick={handleOverlayClick}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -240,39 +240,39 @@ const MembersPage = () => {
             <p>Manage your gym members and memberships</p>
           </div>
           <Link to="/Registration" state={{ isAdmin: true }} style={{ textDecoration: 'none' }}>
-          <button  className="add-member-btn">
-            <Plus size={20} />
-            Add Member
-          </button>
+            <button className="add-member-btn">
+              <Plus size={20} />
+              Add Member
+            </button>
           </Link>
         </div>
 
         <div className="filters-container">
           <div className="filters-flex">
-           
-              <div className="search-input-container">
-                <Search size={20} className="icon" />
-                <input
-                  type="text"
-                  placeholder="Search members..."
-                  value={filters.search}
-                  onChange={(e) => dispatch(setFilters({ search: e.target.value, page: 1 }))}
-                  className="search-input"
-                />
-              </div>
-              <select
-                value={filters.status}
-                onChange={(e) => dispatch(setFilters({ status: e.target.value, page: 1 }))}
-                className="status-filter-select"
-              >
-                <option value="">All Status</option>
-                <option value="approved">Approved</option>
-                <option value="expired">Expired</option>
-                <option value="pending">Pending</option>
-                <option value="expiring">Expiring Soon</option>
-               
-              </select>
-            
+
+            <div className="search-input-container">
+              <Search size={20} className="icon" />
+              <input
+                type="text"
+                placeholder="Search members..."
+                value={filters.search}
+                onChange={(e) => dispatch(setFilters({ search: e.target.value, page: 1 }))}
+                className="search-input"
+              />
+            </div>
+            <select
+              value={filters.status}
+              onChange={(e) => dispatch(setFilters({ status: e.target.value, page: 1 }))}
+              className="status-filter-select"
+            >
+              <option value="">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="expired">Expired</option>
+              <option value="pending">Pending</option>
+              <option value="expiring">Expiring Soon</option>
+
+            </select>
+
             {selectedMembers.length > 0 && (
               <div className="bulk-actions">
                 <button onClick={handleBulkDelete} className="action-btn delete-btn">
@@ -290,10 +290,10 @@ const MembersPage = () => {
               <thead>
                 <tr>
                   <th>
-                    <input 
-                      type="checkbox" 
-                      className="checkbox" 
-                      checked={members.length > 0 && selectedMembers.length === members.length} 
+                    <input
+                      type="checkbox"
+                      className="checkbox"
+                      checked={members.length > 0 && selectedMembers.length === members.length}
                       onChange={(e) => {
                         if (e.target.checked) {
                           const allMemberIds = members.map(m => m._id);
@@ -320,11 +320,11 @@ const MembersPage = () => {
                 ) : members.map((member) => (
                   <tr key={member._id}>
                     <td>
-                      <input 
-                        type="checkbox" 
-                        className="checkbox" 
-                        checked={selectedMembers.includes(member._id)} 
-                        onChange={() => dispatch(toggleMemberSelection(member._id))} 
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={selectedMembers.includes(member._id)}
+                        onChange={() => dispatch(toggleMemberSelection(member._id))}
                       />
                     </td>
                     <td>
@@ -346,24 +346,24 @@ const MembersPage = () => {
                     <td><div className="fees"><IndianRupee size={16} />{member.fees.toLocaleString()}</div></td>
                     <td>
                       <div className="action-buttons">
-                        <button 
-                          onClick={() => openWhatsAppChat(member.mobile)} 
-                          className="icon-btn " 
+                        <button
+                          onClick={() => openWhatsAppChat(member.mobile)}
+                          className="icon-btn "
                           style={{ backgroundColor: 'rgb(35 153 79)' }}
                           title="Message on WhatsApp"
                         >
                           <FaWhatsapp size={18} />
                         </button>
-                        <button 
-                          onClick={() => dispatch(setEditingMember(member))} 
-                          className="icon-btn edit-btn" 
+                        <button
+                          onClick={() => dispatch(setEditingMember(member))}
+                          className="icon-btn edit-btn"
                           title="Edit member"
                         >
                           <Edit size={16} />
                         </button>
-                        <button 
-                          onClick={() => handleDeleteMember(member._id)} 
-                          className="icon-btn delete-btn" 
+                        <button
+                          onClick={() => handleDeleteMember(member._id)}
+                          className="icon-btn delete-btn"
                           title="Delete member"
                           style={{ backgroundColor: 'var(--primary-red)' }}
                         >
@@ -376,24 +376,24 @@ const MembersPage = () => {
               </tbody>
             </table>
             {pagination.total > 1 && (
-            <div className="pagination-container">
-              <div className="pagination-info">Showing {((pagination.current - 1) * filters.limit) + 1} to {Math.min(pagination.current * filters.limit, pagination.totalMembers)} of {pagination.totalMembers} results</div>
-              <div className="pagination-controls">
-                <button onClick={() => dispatch(setFilters({ page: pagination.current - 1 }))} disabled={pagination.current === 1} className="page-btn">Previous</button>
-                <span className="page-indicator">Page {pagination.current} of {pagination.total}</span>
-                <button onClick={() => dispatch(setFilters({ page: pagination.current + 1 }))} disabled={pagination.current === pagination.total} className="page-btn">Next</button>
+              <div className="pagination-container">
+                <div className="pagination-info">Showing {((pagination.current - 1) * filters.limit) + 1} to {Math.min(pagination.current * filters.limit, pagination.totalMembers)} of {pagination.totalMembers} results</div>
+                <div className="pagination-controls">
+                  <button onClick={() => dispatch(setFilters({ page: pagination.current - 1 }))} disabled={pagination.current === 1} className="page-btn">Previous</button>
+                  <span className="page-indicator">Page {pagination.current} of {pagination.total}</span>
+                  <button onClick={() => dispatch(setFilters({ page: parseInt(pagination.current) + 1 }))} disabled={pagination.current === pagination.total} className="page-btn">Next</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
         </div>
       </div>
       {/* Add Member Modal */}
-      <MemberModal 
-        isOpen={showAddModal} 
-        onClose={() => dispatch(setShowAddModal(false))} 
-        onSubmit={handleAddMember} 
-        title="Add New Member" 
+      <MemberModal
+        isOpen={showAddModal}
+        onClose={() => dispatch(setShowAddModal(false))}
+        onSubmit={handleAddMember}
+        title="Add New Member"
         isLoading={isAdding}
       >
         <div className="form-scroll-container">
