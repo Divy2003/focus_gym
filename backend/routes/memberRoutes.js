@@ -18,7 +18,8 @@ const memberValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('mobile').matches(/^\+?[1-9]\d{9,14}$/).withMessage('Invalid mobile number'),
   body('month').isInt({ min: 1 }).withMessage('Month must be a positive integer'),
-  body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number')
+  body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number'),
+  body('profileImage').optional().isString().withMessage('Profile image must be a string (base64 data URL)')
 ];
 // For updating a member (all fields optional)
 const updateMemberValidation = [
@@ -26,7 +27,8 @@ const updateMemberValidation = [
   body('mobile').optional().matches(/^\+?[1-9]\d{9,14}$/).withMessage('Invalid mobile number'),
   body('month').optional().isInt({ min: 1 }).withMessage('Month must be a positive integer'),
   body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number'),
-  body('status').optional().isIn(['pending', 'approved', 'expired']).withMessage('Invalid status value')
+  body('status').optional().isIn(['pending', 'approved', 'expired']).withMessage('Invalid status value'),
+  body('profileImage').optional().isString().withMessage('Profile image must be a string (base64 data URL)')
 ];
 
 // Public route - Add member (no authentication required)

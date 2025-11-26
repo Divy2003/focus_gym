@@ -21,7 +21,7 @@ import {
   setEditingMember
 } from '../../redux/slices/membersSlice.js';
 import {
-  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle
+  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle, Camera, RefreshCw
 } from 'lucide-react';
 import UpdateMemberModalFixed from '../../components/admin/UpdateMemberModalFixed';
 import '../../styles/admin/MembersPage.css';
@@ -51,8 +51,60 @@ const MembersPage = () => {
     month: 1,
     fees: 0,
     description: '',
-    status: 'pending'
+    status: 'pending',
+    profileImage: ''
   });
+
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const [stream, setStream] = useState(null);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setStream(mediaStream);
+      setShowCamera(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Could not access camera. Please ensure you have granted permission.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      context.drawImage(videoRef.current, 0, 0, 300, 300);
+      const imageData = canvasRef.current.toDataURL('image/jpeg');
+      setMemberForm(prev => ({ ...prev, profileImage: imageData }));
+      stopCamera();
+    }
+  };
+
+  const retakePhoto = () => {
+    setMemberForm(prev => ({ ...prev, profileImage: '' }));
+    startCamera();
+  };
+
+  // Cleanup camera on unmount or modal close
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   useEffect(() => {
     if (showEditModal && editingMember) {
@@ -71,7 +123,8 @@ const MembersPage = () => {
         month: 1,
         fees: 0,
         description: '',
-        status: 'pending'
+        status: 'pending',
+        profileImage: ''
       });
     }
   }, [showEditModal, editingMember]);
@@ -329,7 +382,17 @@ const MembersPage = () => {
                     </td>
                     <td>
                       <div className="member-info">
-                        <div className="member-avatar">{member.name.charAt(0).toUpperCase()}</div>
+                        <div className="member-avatar">
+                          {member.profileImage ? (
+                            <img 
+                              src={member.profileImage} 
+                              alt={member.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                            />
+                          ) : (
+                            member.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
                         <div className="member-details">
                           <div className="name">{member.name}</div>
                           <div className="mobile"><Phone size={12} />{member.mobile}</div>
@@ -397,6 +460,41 @@ const MembersPage = () => {
         isLoading={isAdding}
       >
         <div className="form-scroll-container">
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+            <label>Profile Photo (Optional)</label>
+            {memberForm.profileImage ? (
+              <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #ddd' }}>
+                <img src={memberForm.profileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  type="button"
+                  onClick={retakePhoto}
+                  style={{ position: 'absolute', bottom: '0', width: '100%', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }}
+                >
+                  Retake
+                </button>
+              </div>
+            ) : showCamera ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '300px', height: '300px', overflow: 'hidden', borderRadius: '8px', background: '#000' }}>
+                  <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <canvas ref={canvasRef} width="300" height="300" style={{ display: 'none' }} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={capturePhoto} className="action-btn" style={{ background: '#23994f', color: 'white' }}>
+                    <Camera size={16} /> Capture
+                  </button>
+                  <button type="button" onClick={stopCamera} className="action-btn" style={{ background: '#dc3545', color: 'white' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={startCamera} className="action-btn" style={{ background: '#4a90e2', color: 'white', padding: '8px 16px' }}>
+                <Camera size={16} /> Take Photo
+              </button>
+            )}
+          </div>
+
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <input type="text" id="name" name="name" value={memberForm.name} onChange={handleFormChange} required />

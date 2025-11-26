@@ -12,13 +12,17 @@ const memberSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  profileImage: {
+    type: String,
+    default: ''
+  },
   joiningDate: {
     type: Date,
     default: Date.now
   },
   endingDate: {
     type: Date,
-    
+
   },
   month: {
     type: Number,
@@ -36,7 +40,7 @@ const memberSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'approved', 'expired'],
-    default: function() {
+    default: function () {
       return this.fees > 0 ? 'approved' : 'pending';
     }
   },
@@ -49,18 +53,18 @@ const memberSchema = new mongoose.Schema({
 });
 
 // Auto calculate ending date
-memberSchema.pre('save', function(next) {
+memberSchema.pre('save', function (next) {
   if (this.isNew || this.isModified('joiningDate') || this.isModified('month')) {
     const endDate = new Date(this.joiningDate);
     endDate.setMonth(endDate.getMonth() + this.month);
     this.endingDate = endDate;
   }
-  
+
   // Auto set status based on fees
   if (this.isModified('fees')) {
     this.status = this.fees > 0 ? 'approved' : 'pending';
   }
-  
+
   next();
 });
 
@@ -72,7 +76,7 @@ memberSchema.index({ status: 1 });
 memberSchema.index({ status: 1, endingDate: 1 });
 
 // Static method to bulk mark members as expired when endingDate is past
-memberSchema.statics.updateExpiredMembers = async function() {
+memberSchema.statics.updateExpiredMembers = async function () {
   const now = new Date();
   const result = await this.updateMany(
     { isActive: true, status: { $ne: 'expired' }, endingDate: { $lt: now } },

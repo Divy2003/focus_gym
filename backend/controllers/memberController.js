@@ -14,6 +14,34 @@ if (hasTwilio) {
   client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 }
 
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+// Helper to upload image
+async function uploadImageToCloudinary(src, folder = 'members') {
+  if (!src) return null;
+  try {
+    const options = {
+      folder,
+      resource_type: 'image',
+      access_mode: 'public',
+      overwrite: true,
+    };
+    const result = await cloudinary.uploader.upload(src, options);
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return null;
+  }
+}
+
 // Add new member
 const addMember = async (req, res) => {
   try {
@@ -27,6 +55,15 @@ const addMember = async (req, res) => {
     }
 
     const memberData = req.body;
+
+    // Handle profile image upload
+    if (memberData.profileImage) {
+      const imageUrl = await uploadImageToCloudinary(memberData.profileImage);
+      if (imageUrl) {
+        memberData.profileImage = imageUrl;
+      }
+    }
+
     const member = new Member(memberData);
     await member.save();
 
@@ -47,20 +84,20 @@ const addMember = async (req, res) => {
 // Get all members with filters and search
 const getMembers = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      search = '', 
-      status = '', 
-      sortBy = 'createdAt', 
-      sortOrder = 'desc' 
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      status = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
     } = req.query;
 
     const query = { isActive: true };
     const now = new Date();
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(now.getDate() + 7);
-    
+
     // Search by name or mobile
     if (search) {
       query.$or = [
@@ -68,14 +105,14 @@ const getMembers = async (req, res) => {
         { mobile: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     // Filter by status
     if (status) {
       if (status === 'expired') {
         // Include members with status 'expired' OR approved members with past endingDate
         query.$or = [
           { status: 'expired' },
-          { 
+          {
             $and: [
               { endingDate: { $lt: now } },
               { status: 'approved' }
@@ -84,9 +121,9 @@ const getMembers = async (req, res) => {
         ];
       } else if (status === 'expiring') {
         // Members expiring in the next 7 days
-        query.endingDate = { 
-          $gte: now, 
-          $lte: sevenDaysFromNow 
+        query.endingDate = {
+          $gte: now,
+          $lte: sevenDaysFromNow
         };
       } else if (status === 'approved' || status === 'active') {
         // Active members (not expired, not expiring soon)
@@ -142,8 +179,8 @@ const updateMember = async (req, res) => {
     const updateData = { ...req.body };
 
     // Find the existing member first
-    const existingMember = await Member.findById(id);
-    if (!existingMember) {
+    const member = await Member.findById(id);
+    if (!member) {
       return res.status(404).json({
         success: false,
         message: 'Member not found'
@@ -151,9 +188,9 @@ const updateMember = async (req, res) => {
     }
 
     // Handle fee updates for pending members
-    if (existingMember.status === 'pending' && updateData.fees > 0) {
+    if (member.status === 'pending' && updateData.fees > 0) {
       // If fees are being added to a pending member, automatically approve
-      updateData.status = 'approved';
+      member.status = 'approved';
     }
     // If status is being explicitly set to pending, block it
     else if (updateData.status === 'pending') {
@@ -170,7 +207,20 @@ const updateMember = async (req, res) => {
       });
     }
 
-    const member = await Member.findByIdAndUpdate(id, updateData, { new: true });
+    // Handle profile image upload
+    if (updateData.profileImage && updateData.profileImage.startsWith('data:image')) {
+      const imageUrl = await uploadImageToCloudinary(updateData.profileImage);
+      if (imageUrl) {
+        updateData.profileImage = imageUrl;
+      }
+    }
+
+    // Update fields manually to trigger pre-save hooks
+    Object.keys(updateData).forEach(key => {
+      member[key] = updateData[key];
+    });
+
+    await member.save();
 
     res.status(200).json({
       success: true,
@@ -192,8 +242,8 @@ const deleteMember = async (req, res) => {
     const { id } = req.params;
 
     const member = await Member.findByIdAndUpdate(
-      id, 
-      { isActive: false }, 
+      id,
+      { isActive: false },
       { new: true }
     );
 
@@ -290,9 +340,9 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    const members = await Member.find({ 
-      _id: { $in: memberIds }, 
-      isActive: true 
+    const members = await Member.find({
+      _id: { $in: memberIds },
+      isActive: true
     });
 
     const messagePromises = members.map(async (member) => {

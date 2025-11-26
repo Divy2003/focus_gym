@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import '../styles/Registration.css';  // 👈 Import CSS file
 import gymLogo from '../assets/logo.png';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 const RegistrationForm = () => {
   // Form state
   const [formData, setFormData] = useState({
@@ -10,7 +11,8 @@ const RegistrationForm = () => {
     month: '',
     fees: '',
     description: '',
-    startDate: ''
+    startDate: '',
+    profileImage: ''
   });
 
   // UI state
@@ -18,6 +20,12 @@ const RegistrationForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
   const [showPriceDisplay, setShowPriceDisplay] = useState(false);
+
+  // Camera state
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const [stream, setStream] = useState(null);
 
   // Determine if this page is opened by an admin (from admin dashboard)
   // Priority: location.state.isAdmin, fallback to URL param ?admin=true
@@ -81,6 +89,117 @@ const RegistrationForm = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Camera functions
+  const startCamera = async () => {
+    try {
+      const constraints = {
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: false
+      };
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(mediaStream);
+      setShowCamera(true);
+      
+      // Set up video element after getting stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error("Error playing video:", err);
+            });
+          }
+        };
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      let errorMessage = "Could not access camera. ";
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage += "Please allow camera access and try again.";
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += "No camera found on this device.";
+      } else {
+        errorMessage += "Please check your camera settings and try again.";
+      }
+      
+      alert(errorMessage);
+      setShowCamera(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      try {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        
+        // Ensure video is playing
+        if (video.readyState >= 2) {
+          // Set canvas dimensions to match video
+          canvas.width = video.videoWidth || 300;
+          canvas.height = video.videoHeight || 300;
+          
+          // Draw the video frame to canvas
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to base64 data URL
+          const imageData = canvas.toDataURL('image/jpeg', 0.8); // Use 0.8 quality
+          setFormData(prev => ({ ...prev, profileImage: imageData }));
+          stopCamera();
+        } else {
+          alert("Video not ready. Please try again.");
+        }
+      } catch (err) {
+        console.error("Error capturing photo:", err);
+        alert("Error capturing photo. Please try again.");
+      }
+    }
+  };
+
+  const retakePhoto = () => {
+    setFormData(prev => ({ ...prev, profileImage: '' }));
+    startCamera();
+  };
+
+  // Cleanup camera on unmount
+  React.useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Reset profile image when form is reset
+  React.useEffect(() => {
+    if (showSuccess) {
+      setFormData({
+        name: '',
+        mobile: '',
+        month: '',
+        fees: '',
+        description: '',
+        startDate: '',
+        profileImage: ''
+      });
+    }
+  }, [showSuccess]);
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,7 +224,8 @@ const RegistrationForm = () => {
         month: parseInt(formData.month),
         fees: parseFloat(formData.fees) || 0,
         description: formData.description.trim(),
-        joiningDate: new Date(formData.startDate).toISOString()
+        joiningDate: new Date(formData.startDate).toISOString(),
+        profileImage: formData.profileImage
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/members`, {
@@ -119,8 +239,15 @@ const RegistrationForm = () => {
       if (!response.ok) throw new Error(result.message || 'Registration failed');
 
       setShowSuccess(true);
-      setFormData({ name: '', mobile: '', month: '', fees: '', description: '', startDate: '' });
+      setFormData({ name: '', mobile: '', month: '', fees: '', description: '', startDate: '', profileImage: '' });
       setShowPriceDisplay(false);
+      
+      // Clean up camera if it's open
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setShowCamera(false);
+      }
 
       setTimeout(() => setShowSuccess(false), 5000);
     } catch (error) {
@@ -161,6 +288,147 @@ const RegistrationForm = () => {
 
         {/* Form */}
         <div className="form-body">
+          {/* Profile Photo Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <label style={{ marginBottom: '0.5rem', fontWeight: '500', color: '#333' }}>
+              Profile Photo (Optional)
+            </label>
+            {formData.profileImage ? (
+              <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ddd', marginBottom: '1rem' }}>
+                <img 
+                  src={formData.profileImage} 
+                  alt="Profile" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+                <button
+                  type="button"
+                  onClick={retakePhoto}
+                  style={{ 
+                    position: 'absolute', 
+                    bottom: '0', 
+                    width: '100%', 
+                    background: 'rgba(0,0,0,0.8)', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '8px', 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Retake Photo
+                </button>
+              </div>
+            ) : showCamera ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginBottom: '1rem' }}>
+                <div style={{ 
+                  width: '300px', 
+                  height: '300px', 
+                  overflow: 'hidden', 
+                  borderRadius: '8px', 
+                  background: '#000',
+                  border: '2px solid #ddd',
+                  position: 'relative'
+                }}>
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                      display: 'block'
+                    }} 
+                  />
+                  {/* Loading indicator */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: 'white',
+                    fontSize: '14px',
+                    textAlign: 'center'
+                  }}>
+                    {!videoRef.current?.readyState ? 'Loading camera...' : ''}
+                  </div>
+                </div>
+                <canvas 
+                  ref={canvasRef} 
+                  style={{ display: 'none' }} 
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={capturePhoto} 
+                    style={{ 
+                      background: '#23994f', 
+                      color: 'white', 
+                      border: 'none', 
+                      padding: '12px 24px', 
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    <Camera size={18} /> Capture Photo
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={stopCamera} 
+                    style={{ 
+                      background: '#dc3545', 
+                      color: 'white', 
+                      border: 'none', 
+                      padding: '12px 24px', 
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button 
+                type="button" 
+                onClick={startCamera} 
+                style={{ 
+                  background: '#4a90e2', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '12px 24px', 
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '1rem',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = '#3a7bc8';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = '#4a90e2';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                <Camera size={18} /> Take Profile Photo
+              </button>
+            )}
+          </div>
           {/* Name */}
           <div>
             <label htmlFor="name">Full Name *</label>
