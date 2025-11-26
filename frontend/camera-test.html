@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .camera-container {
+            width: 300px;
+            height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+            margin: 20px auto;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .start-btn { background: #4a90e2; color: white; }
+        .capture-btn { background: #23994f; color: white; }
+        .stop-btn { background: #dc3545; color: white; }
+        .result {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .captured-image {
+            max-width: 200px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Camera Functionality Test</h1>
+    
+    <div class="camera-container" id="cameraContainer" style="display: none;">
+        <video id="video" autoplay playsinline muted webkit-playsinline="true"></video>
+        <div class="loading" id="loading">Loading camera...</div>
+    </div>
+    
+    <canvas id="canvas" style="display: none;"></canvas>
+    
+    <div style="text-align: center;">
+        <button class="start-btn" onclick="startCamera()">Start Camera</button>
+        <button class="capture-btn" onclick="capturePhoto()" style="display: none;" id="captureBtn">Capture Photo</button>
+        <button class="stop-btn" onclick="stopCamera()" style="display: none;" id="stopBtn">Stop Camera</button>
+    </div>
+    
+    <div class="result" id="result"></div>
+    
+    <script>
+        let stream = null;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const loading = document.getElementById('loading');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const captureBtn = document.getElementById('captureBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const result = document.getElementById('result');
+        
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        width: { ideal: 640, min: 320, max: 1280 },
+                        height: { ideal: 480, min: 240, max: 720 },
+                        facingMode: 'user',
+                        aspectRatio: { ideal: 1.33 }
+                    },
+                    audio: false
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                cameraContainer.style.display = 'block';
+                captureBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'inline-block';
+                
+                video.onloadedmetadata = () => {
+                    video.play().catch(err => {
+                        console.error("Error playing video:", err);
+                        alert("Error starting video playback.");
+                    });
+                };
+                
+                video.oncanplay = () => {
+                    loading.style.display = 'none';
+                    console.log("Video ready to play");
+                };
+                
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                let errorMessage = "Could not access camera. ";
+                
+                if (err.name === 'NotAllowedError') {
+                    errorMessage += "Please allow camera access and try again.";
+                } else if (err.name === 'NotFoundError') {
+                    errorMessage += "No camera found on this device.";
+                } else if (err.name === 'NotReadableError') {
+                    errorMessage += "Camera is already in use by another application.";
+                } else if (err.name === 'OverconstrainedError') {
+                    errorMessage += "Camera doesn't support the required settings.";
+                } else {
+                    errorMessage += "Please check your camera settings and try again.";
+                }
+                
+                alert(errorMessage);
+            }
+        }
+        
+        function capturePhoto() {
+            if (video && canvas) {
+                try {
+                    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                        const videoWidth = video.videoWidth;
+                        const videoHeight = video.videoHeight;
+                        
+                        const minSize = 300;
+                        let canvasWidth = Math.max(videoWidth, minSize);
+                        let canvasHeight = Math.max(videoHeight, minSize);
+                        
+                        const aspectRatio = videoWidth / videoHeight;
+                        if (aspectRatio > 1) {
+                            canvasHeight = canvasWidth / aspectRatio;
+                        } else {
+                            canvasWidth = canvasHeight * aspectRatio;
+                        }
+                        
+                        canvas.width = canvasWidth;
+                        canvas.height = canvasHeight;
+                        
+                        const context = canvas.getContext('2d');
+                        context.clearRect(0, 0, canvasWidth, canvasHeight);
+                        context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+                        
+                        const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                        
+                        if (imageData && imageData.length > 1000) {
+                            result.innerHTML = `
+                                <h3>Photo Captured Successfully!</h3>
+                                <img src="${imageData}" class="captured-image" alt="Captured photo">
+                                <p>Image size: ${Math.round(imageData.length / 1024)} KB</p>
+                                <p>Canvas dimensions: ${canvasWidth} x ${canvasHeight}</p>
+                                <p>Video dimensions: ${videoWidth} x ${videoHeight}</p>
+                            `;
+                            stopCamera();
+                        } else {
+                            throw new Error("Failed to capture image data");
+                        }
+                    } else {
+                        alert("Video not ready. Please wait for the camera to fully load and try again.");
+                    }
+                } catch (err) {
+                    console.error("Error capturing photo:", err);
+                    alert("Error capturing photo: " + err.message);
+                }
+            }
+        }
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            cameraContainer.style.display = 'none';
+            captureBtn.style.display = 'none';
+            stopBtn.style.display = 'none';
+            loading.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

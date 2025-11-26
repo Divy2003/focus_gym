@@ -59,15 +59,62 @@ const UpdateMemberModalFixed = ({ member, isOpen, onClose, onUpdate, isLoading }
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Enhanced constraints for better mobile compatibility
+      const constraints = {
+        video: {
+          width: { ideal: 640, min: 320, max: 1280 },
+          height: { ideal: 480, min: 240, max: 720 },
+          facingMode: 'user',
+          aspectRatio: { ideal: 1.33 }
+        },
+        audio: false
+      };
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
       setShowCamera(true);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Enhanced video setup with better error handling
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error("Error playing video:", err);
+              alert("Error starting video playback. Please try again.");
+            });
+          }
+        };
+        
+        // Additional event listeners for better mobile support
+        videoRef.current.oncanplay = () => {
+          console.log("Video can start playing");
+        };
+        
+        videoRef.current.onerror = (err) => {
+          console.error("Video error:", err);
+          alert("Video playback error. Please try again.");
+        };
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert("Could not access camera. Please ensure you have granted permission.");
+      let errorMessage = "Could not access camera. ";
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage += "Please allow camera access and try again.";
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += "No camera found on this device.";
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += "Camera is already in use by another application.";
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage += "Camera doesn't support the required settings.";
+      } else {
+        errorMessage += "Please check your camera settings and try again.";
+      }
+      
+      alert(errorMessage);
+      setShowCamera(false);
     }
   };
 
@@ -81,11 +128,58 @@ const UpdateMemberModalFixed = ({ member, isOpen, onClose, onUpdate, isLoading }
 
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
-      context.drawImage(videoRef.current, 0, 0, 300, 300);
-      const imageData = canvasRef.current.toDataURL('image/jpeg');
-      setFormData(prev => ({ ...prev, profileImage: imageData }));
-      stopCamera();
+      try {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        
+        // Enhanced video readiness checks
+        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+          // Set canvas dimensions to match video actual dimensions
+          const videoWidth = video.videoWidth;
+          const videoHeight = video.videoHeight;
+          
+          // Ensure minimum dimensions for better quality
+          const minSize = 300;
+          let canvasWidth = Math.max(videoWidth, minSize);
+          let canvasHeight = Math.max(videoHeight, minSize);
+          
+          // Maintain aspect ratio
+          const aspectRatio = videoWidth / videoHeight;
+          if (aspectRatio > 1) {
+            canvasHeight = canvasWidth / aspectRatio;
+          } else {
+            canvasWidth = canvasHeight * aspectRatio;
+          }
+          
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          
+          // Clear canvas before drawing
+          context.clearRect(0, 0, canvasWidth, canvasHeight);
+          
+          // Draw the video frame to canvas with proper scaling
+          context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+          
+          // Convert to base64 data URL with good quality
+          const imageData = canvas.toDataURL('image/jpeg', 0.85);
+          
+          // Validate that we actually captured something
+          if (imageData && imageData.length > 1000) {
+            setFormData(prev => ({ ...prev, profileImage: imageData }));
+            stopCamera();
+          } else {
+            throw new Error("Failed to capture image data");
+          }
+        } else {
+          alert("Video not ready. Please wait for the camera to fully load and try again.");
+        }
+      } catch (err) {
+        console.error("Error capturing photo:", err);
+        alert("Error capturing photo. Please ensure the camera is working and try again.");
+      }
+    } else {
+      alert("Camera not available. Please try starting the camera again.");
     }
   };
 
@@ -146,10 +240,38 @@ const UpdateMemberModalFixed = ({ member, isOpen, onClose, onUpdate, isLoading }
                   </div>
                 ) : showCamera ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '300px', height: '300px', overflow: 'hidden', borderRadius: '8px', background: '#000' }}>
-                      <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ width: '300px', height: '300px', overflow: 'hidden', borderRadius: '8px', background: '#000', position: 'relative' }}>
+                      <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        playsInline 
+                        muted
+                        webkit-playsinline="true"
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover',
+                          backgroundColor: '#000'
+                        }} 
+                      />
+                      {/* Enhanced loading indicator */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: 'white',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        padding: '8px',
+                        borderRadius: '4px'
+                      }}>
+                        {!videoRef.current?.readyState || videoRef.current?.readyState < 2 ? 'Loading camera...' : 
+                         videoRef.current?.videoWidth === 0 ? 'Initializing video...' : ''}
+                      </div>
                     </div>
-                    <canvas ref={canvasRef} width="300" height="300" style={{ display: 'none' }} />
+                    <canvas ref={canvasRef} style={{ display: 'none' }} />
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button type="button" onClick={capturePhoto} className="action-btn" style={{ background: '#23994f', color: 'white' }}>
                         <Camera size={16} /> Capture

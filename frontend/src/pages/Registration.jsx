@@ -92,11 +92,13 @@ const RegistrationForm = () => {
   // Camera functions
   const startCamera = async () => {
     try {
+      // Enhanced constraints for better mobile compatibility
       const constraints = {
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
+          width: { ideal: 640, min: 320, max: 1280 },
+          height: { ideal: 480, min: 240, max: 720 },
+          facingMode: 'user',
+          aspectRatio: { ideal: 1.33 }
         },
         audio: false
       };
@@ -108,12 +110,25 @@ const RegistrationForm = () => {
       // Set up video element after getting stream
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Enhanced video setup with better error handling
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
             videoRef.current.play().catch(err => {
               console.error("Error playing video:", err);
+              alert("Error starting video playback. Please try again.");
             });
           }
+        };
+        
+        // Additional event listeners for better mobile support
+        videoRef.current.oncanplay = () => {
+          console.log("Video can start playing");
+        };
+        
+        videoRef.current.onerror = (err) => {
+          console.error("Video error:", err);
+          alert("Video playback error. Please try again.");
         };
       }
     } catch (err) {
@@ -124,6 +139,10 @@ const RegistrationForm = () => {
         errorMessage += "Please allow camera access and try again.";
       } else if (err.name === 'NotFoundError') {
         errorMessage += "No camera found on this device.";
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += "Camera is already in use by another application.";
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage += "Camera doesn't support the required settings.";
       } else {
         errorMessage += "Please check your camera settings and try again.";
       }
@@ -148,26 +167,53 @@ const RegistrationForm = () => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
         
-        // Ensure video is playing
-        if (video.readyState >= 2) {
-          // Set canvas dimensions to match video
-          canvas.width = video.videoWidth || 300;
-          canvas.height = video.videoHeight || 300;
+        // Enhanced video readiness checks
+        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+          // Set canvas dimensions to match video actual dimensions
+          const videoWidth = video.videoWidth;
+          const videoHeight = video.videoHeight;
           
-          // Draw the video frame to canvas
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          // Ensure minimum dimensions for better quality
+          const minSize = 300;
+          let canvasWidth = Math.max(videoWidth, minSize);
+          let canvasHeight = Math.max(videoHeight, minSize);
           
-          // Convert to base64 data URL
-          const imageData = canvas.toDataURL('image/jpeg', 0.8); // Use 0.8 quality
-          setFormData(prev => ({ ...prev, profileImage: imageData }));
-          stopCamera();
+          // Maintain aspect ratio
+          const aspectRatio = videoWidth / videoHeight;
+          if (aspectRatio > 1) {
+            canvasHeight = canvasWidth / aspectRatio;
+          } else {
+            canvasWidth = canvasHeight * aspectRatio;
+          }
+          
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          
+          // Clear canvas before drawing
+          context.clearRect(0, 0, canvasWidth, canvasHeight);
+          
+          // Draw the video frame to canvas with proper scaling
+          context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+          
+          // Convert to base64 data URL with good quality
+          const imageData = canvas.toDataURL('image/jpeg', 0.85);
+          
+          // Validate that we actually captured something
+          if (imageData && imageData.length > 1000) {
+            setFormData(prev => ({ ...prev, profileImage: imageData }));
+            stopCamera();
+          } else {
+            throw new Error("Failed to capture image data");
+          }
         } else {
-          alert("Video not ready. Please try again.");
+          alert("Video not ready. Please wait for the camera to fully load and try again.");
         }
       } catch (err) {
         console.error("Error capturing photo:", err);
-        alert("Error capturing photo. Please try again.");
+        alert("Error capturing photo. Please ensure the camera is working and try again.");
       }
+    } else {
+      alert("Camera not available. Please try starting the camera again.");
     }
   };
 
@@ -335,14 +381,16 @@ const RegistrationForm = () => {
                     autoPlay 
                     playsInline 
                     muted
+                    webkit-playsinline="true"
                     style={{ 
                       width: '100%', 
                       height: '100%', 
                       objectFit: 'cover',
-                      display: 'block'
+                      display: 'block',
+                      backgroundColor: '#000'
                     }} 
                   />
-                  {/* Loading indicator */}
+                  {/* Enhanced loading indicator */}
                   <div style={{
                     position: 'absolute',
                     top: '50%',
@@ -350,9 +398,13 @@ const RegistrationForm = () => {
                     transform: 'translate(-50%, -50%)',
                     color: 'white',
                     fontSize: '14px',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    padding: '10px',
+                    borderRadius: '5px'
                   }}>
-                    {!videoRef.current?.readyState ? 'Loading camera...' : ''}
+                    {!videoRef.current?.readyState || videoRef.current?.readyState < 2 ? 'Loading camera...' : 
+                     videoRef.current?.videoWidth === 0 ? 'Initializing video...' : ''}
                   </div>
                 </div>
                 <canvas 
