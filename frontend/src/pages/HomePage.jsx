@@ -259,7 +259,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-        <p style={{ textAlign: 'center', marginTop: '2rem' }}>For more image Follow us on <a href="https://www.instagram.com/focusgym/">Instagram</a></p>
+        <p style={{ textAlign: 'center', marginTop: '2rem' }}>For more image Follow us on <a href="https://www.instagram.com/focus_the__gym?igsh=MWs2eHd1c3NyamNvdQ%3D%3D&utm_source=qr">Instagram</a></p>
       </section>
 
       {/* Testimonials Section */}
