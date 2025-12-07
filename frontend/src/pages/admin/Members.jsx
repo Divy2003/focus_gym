@@ -56,6 +56,9 @@ const MembersPage = () => {
   });
 
   const [showCamera, setShowCamera] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageName, setSelectedImageName] = useState('');
   const videoRef = React.useRef(null);
   const canvasRef = React.useRef(null);
   const [stream, setStream] = useState(null);
@@ -97,6 +100,18 @@ const MembersPage = () => {
     startCamera();
   };
 
+  const handleImageClick = (imageSrc, memberName) => {
+    setSelectedImage(imageSrc);
+    setSelectedImageName(memberName);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImage(null);
+    setSelectedImageName('');
+  };
+
   // Cleanup camera on unmount or modal close
   useEffect(() => {
     return () => {
@@ -105,6 +120,22 @@ const MembersPage = () => {
       }
     };
   }, [stream]);
+
+  // Handle ESC key to close image modal
+  useEffect(() => {
+    if (!showImageModal) return;
+
+    const handleEscKey = (e) => {
+      if (e.key === 'Escape') {
+        closeImageModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showImageModal]);
 
   useEffect(() => {
     if (showEditModal && editingMember) {
@@ -387,7 +418,9 @@ const MembersPage = () => {
                             <img 
                               src={member.profileImage} 
                               alt={member.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', cursor: 'pointer' }}
+                              onClick={() => handleImageClick(member.profileImage, member.name)}
+                              title="Click to view full size"
                             />
                           ) : (
                             member.name.charAt(0).toUpperCase()
@@ -533,6 +566,86 @@ const MembersPage = () => {
         onUpdate={handleFixedModalUpdate}
         isLoading={isUpdating}
       />
+
+      {/* Image Preview Modal */}
+      {showImageModal && (
+        <div 
+          className="image-modal-overlay"
+          onClick={closeImageModal}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer'
+          }}
+        >
+          <div 
+            className="image-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}
+          >
+            <button
+              onClick={closeImageModal}
+              style={{
+                position: 'absolute',
+                top: '-40px',
+                right: '0',
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '30px',
+                cursor: 'pointer',
+                padding: '5px',
+                zIndex: 10000
+              }}
+              title="Close"
+            >
+              <X size={30} />
+            </button>
+            
+            <img
+              src={selectedImage}
+              alt={selectedImageName}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '85vh',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+              }}
+            />
+            
+            <div
+              style={{
+                marginTop: '15px',
+                color: 'white',
+                fontSize: '16px',
+                fontWeight: '500',
+                textAlign: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                padding: '8px 16px',
+                borderRadius: '20px'
+              }}
+            >
+              {selectedImageName}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

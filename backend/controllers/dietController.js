@@ -167,7 +167,7 @@ const createDietPlan = async (req, res) => {
 
     const processedData = processDietPlanData({
       ...req.body,
-      createdBy: req.admin.adminId
+      createdBy: req.user.id
     });
 
     const dietPlan = new DietPlan(processedData);

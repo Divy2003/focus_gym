@@ -19,7 +19,14 @@ const memberValidation = [
   body('mobile').matches(/^\+?[1-9]\d{9,14}$/).withMessage('Invalid mobile number'),
   body('month').isInt({ min: 1 }).withMessage('Month must be a positive integer'),
   body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number'),
-  body('profileImage').optional().isString().withMessage('Profile image must be a string (base64 data URL)')
+  body('profileImage')
+    .optional({ values: 'falsy' })
+    .custom((value) => {
+      if (value && typeof value === 'string' && !value.startsWith('data:image/')) {
+        throw new Error('Profile image must be a valid base64 data URL');
+      }
+      return true;
+    })
 ];
 // For updating a member (all fields optional)
 const updateMemberValidation = [
@@ -28,7 +35,14 @@ const updateMemberValidation = [
   body('month').optional().isInt({ min: 1 }).withMessage('Month must be a positive integer'),
   body('fees').optional().isFloat({ min: 0 }).withMessage('Fees must be a positive number'),
   body('status').optional().isIn(['pending', 'approved', 'expired']).withMessage('Invalid status value'),
-  body('profileImage').optional().isString().withMessage('Profile image must be a string (base64 data URL)')
+  body('profileImage')
+    .optional({ values: 'falsy' })
+    .custom((value) => {
+      if (value && typeof value === 'string' && !value.startsWith('data:image/')) {
+        throw new Error('Profile image must be a valid base64 data URL');
+      }
+      return true;
+    })
 ];
 
 // Public route - Add member (no authentication required)
