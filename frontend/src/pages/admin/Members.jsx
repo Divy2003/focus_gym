@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FaWhatsapp } from "react-icons/fa";
 
 import {
@@ -21,12 +21,21 @@ import {
   setEditingMember
 } from '../../redux/slices/membersSlice.js';
 import {
-  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle, Camera, RefreshCw
+  Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle, Camera, RefreshCw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import UpdateMemberModalFixed from '../../components/admin/UpdateMemberModalFixed';
 import '../../styles/admin/MembersPage.css';
 
 const MembersPage = () => {
+  const [searchParams] = useSearchParams();
+   
+  // Initialize filters from URL params on mount
+  useEffect(() => {
+    const status = searchParams.get('status');
+    if (status) {
+      dispatch(setFilters({ status, page: 1 }));
+    }
+  }, []);
   const openWhatsAppChat = (mobile) => {
     // Remove any non-numeric characters from the mobile number
     const phoneNumber = mobile.replace(/\D/g, '');
@@ -36,7 +45,7 @@ const MembersPage = () => {
   const dispatch = useDispatch();
   const { selectedMembers = [], filters, showAddModal, showEditModal, editingMember } = useSelector(state => state.members);
 
-  const { data: membersData, isLoading, error, refetch } = useGetMembersQuery(filters);
+  const { data: membersData, isLoading, isFetching, error, refetch } = useGetMembersQuery(filters);
   const [addMember, { isLoading: isAdding }] = useAddMemberMutation();
   const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
   const [deleteMember] = useDeleteMemberMutation();
@@ -350,9 +359,10 @@ const MembersPage = () => {
               className="status-filter-select"
             >
               <option value="">All Status</option>
-              <option value="approved">Approved</option>
+              <option value="approved">Active</option>
+             
               <option value="expired">Expired</option>
-              <option value="pending">Pending</option>
+             
               <option value="expiring">Expiring Soon</option>
 
             </select>
@@ -390,14 +400,86 @@ const MembersPage = () => {
                     />
                   </th>
                   <th>Member</th>
-                  <th>Membership</th>
+                  <th>Membership <br /><span style={{fontSize: '0.75em', fontWeight: 'normal'}}>(mm/dd/yy)</span></th>
                   <th>Status</th>
                   <th>Fees</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
+                {isFetching && !isLoading ? (
+                  <>
+                    {members.map((member) => (
+                      <tr key={member._id} className="fade-out">
+                        <td>
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={selectedMembers.includes(member._id)}
+                            onChange={() => dispatch(toggleMemberSelection(member._id))}
+                          />
+                        </td>
+                        <td>
+                          <div className="member-info">
+                            <div className="member-avatar">
+                              {member.profileImage ? (
+                                <img 
+                                  src={member.profileImage} 
+                                  alt={member.name}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', cursor: 'pointer' }}
+                                  onClick={() => handleImageClick(member.profileImage, member.name)}
+                                  title="Click to view full size"
+                                />
+                              ) : (
+                                member.name.charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div className="member-details">
+                              <div className="name">{member.name}</div>
+                              <div className="mobile"><Phone size={12} />{member.mobile}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="membership-info">
+                            <div className="duration"><Calendar size={16} />{member.month} month{member.month > 1 ? 's' : ''}</div>
+                            <div className="dates">{new Date(member.joiningDate).toLocaleDateString()} - {new Date(member.endingDate).toLocaleDateString()}</div>
+                          </div>
+                        </td>
+                        <td>{getStatusBadge(member.status, member)}</td>
+                        <td><div className="fees"><IndianRupee size={16} />{member.fees.toLocaleString()}</div></td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              onClick={() => openWhatsAppChat(member.mobile)}
+                              className="icon-btn "
+                              style={{ backgroundColor: 'rgb(35 153 79)' }}
+                              title="Message on WhatsApp"
+                            >
+                              <FaWhatsapp size={18} />
+                            </button>
+                            <button
+                              onClick={() => dispatch(setEditingMember(member))}
+                              className="icon-btn edit-btn"
+                              title="Edit member"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMember(member._id)}
+                              className="icon-btn delete-btn"
+                              title="Delete member"
+                              style={{ backgroundColor: 'var(--primary-red)' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '1rem' }}><Loader2 className="animate-spin inline-block" size={24} /><span style={{ marginLeft: '8px' }}>Loading more...</span></td></tr>
+                  </>
+                ) : isLoading ? (
                   <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}><Loader2 className="animate-spin inline-block" /></td></tr>
                 ) : error ? (
                   <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--primary-red)' }}>Error loading members.</td></tr>
@@ -471,13 +553,95 @@ const MembersPage = () => {
                 ))}
               </tbody>
             </table>
-            {pagination.total > 1 && (
+            {pagination.total > 0 && (
               <div className="pagination-container">
-                <div className="pagination-info">Showing {((pagination.current - 1) * filters.limit) + 1} to {Math.min(pagination.current * filters.limit, pagination.totalMembers)} of {pagination.totalMembers} results</div>
+                <div className="pagination-left">
+                  <span className="pagination-info">
+                    Showing <strong>{((pagination.current - 1) * filters.limit) + 1}</strong> to <strong>{Math.min(pagination.current * filters.limit, pagination.totalMembers)}</strong> of <strong>{pagination.totalMembers}</strong> data
+                  </span>
+                  <div className="limit-selector">
+                    <label>Per page:</label>
+                    <select
+                      value={filters.limit}
+                      onChange={(e) => dispatch(setFilters({ limit: parseInt(e.target.value), page: 1 }))}
+                      className="limit-select"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="pagination-controls">
-                  <button onClick={() => dispatch(setFilters({ page: pagination.current - 1 }))} disabled={pagination.current === 1} className="page-btn">Previous</button>
-                  <span className="page-indicator">Page {pagination.current} of {pagination.total}</span>
-                  <button onClick={() => dispatch(setFilters({ page: parseInt(pagination.current) + 1 }))} disabled={pagination.current === pagination.total} className="page-btn">Next</button>
+                  <button
+                    onClick={() => dispatch(setFilters({ page: pagination.current - 1 }))}
+                    disabled={pagination.current === 1}
+                    className="page-btn page-btn-nav"
+                    title="Previous page"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  
+                  {pagination.total <= 7 ? (
+                    [...Array(pagination.total)].map((_, idx) => {
+                      const pageNum = idx + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => dispatch(setFilters({ page: pageNum }))}
+                          className={`page-btn ${pagination.current === pageNum ? 'page-btn-active' : ''}`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {pagination.current > 2 && (
+                        <>
+                          <button
+                            onClick={() => dispatch(setFilters({ page: 1 }))}
+                            className="page-btn"
+                          >
+                            1
+                          </button>
+                          {pagination.current > 3 && <span className="page-ellipsis">...</span>}
+                        </>
+                      )}
+                      
+                      {[pagination.current - 1, pagination.current, pagination.current + 1].filter(p => p > 0 && p <= pagination.total).map(pageNum => (
+                        <button
+                          key={pageNum}
+                          onClick={() => dispatch(setFilters({ page: pageNum }))}
+                          className={`page-btn ${pagination.current === pageNum ? 'page-btn-active' : ''}`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                      
+                      {pagination.current < pagination.total - 1 && (
+                        <>
+                          {pagination.current < pagination.total - 2 && <span className="page-ellipsis">...</span>}
+                          <button
+                            onClick={() => dispatch(setFilters({ page: pagination.total }))}
+                            className="page-btn"
+                          >
+                            {pagination.total}
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                  
+                  <button
+                    onClick={() => dispatch(setFilters({ page: parseInt(pagination.current) + 1 }))}
+                    disabled={pagination.current === pagination.total}
+                    className="page-btn page-btn-nav"
+                    title="Next page"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
               </div>
             )}

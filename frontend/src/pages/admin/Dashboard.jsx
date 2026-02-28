@@ -43,26 +43,33 @@ const Dashboard = () => {
 
   const monthlyChartData = dashboardData.monthlyStats || [];
 
-  const StatCard = ({ icon: Icon, title, value, subtext, color = 'blue', trend = null }) => (
-    <div className="stat-card">
-      <div className="stat-card-flex">
-        <div className="stat-card-info">
-          <p className="title">{title}</p>
-          <p className="value">{value}</p>
-          {subtext && <p className="subtext">{subtext}</p>}
+  const StatCard = ({ icon: Icon, title, value, subtext, color = 'blue', trend = null, to = null }) => {
+    const cardContent = (
+      <div className="stat-card">
+        <div className="stat-card-flex">
+          <div className="stat-card-info">
+            <p className="title">{title}</p>
+            <p className="value">{value}</p>
+            {subtext && <p className="subtext">{subtext}</p>}
+          </div>
+          <div className={`stat-card-icon ${color}`}>
+            <Icon className="icon" />
+          </div>
         </div>
-        <div className={`stat-card-icon ${color}`}>
-          <Icon className="icon" />
-        </div>
+        {trend && (
+          <div className="stat-card-trend">
+            <TrendingUp className="icon" />
+            <span className="text">{trend}</span>
+          </div>
+        )}
       </div>
-      {trend && (
-        <div className="stat-card-trend">
-          <TrendingUp className="icon" />
-          <span className="text">{trend}</span>
-        </div>
-      )}
-    </div>
-  );
+    );
+
+    if (to) {
+      return <Link to={to} style={{ textDecoration: 'none' }}>{cardContent}</Link>;
+    }
+    return cardContent;
+  };
 
   if (isLoading) {
     return (
@@ -113,17 +120,16 @@ const Dashboard = () => {
         </div>
 
         <div className="stats-grid">
-          <StatCard icon={Users} title="Total Members" value={dashboardData.totalMembers || 0} color="blue" />
-          <StatCard icon={UserCheck} title="Active Members" value={dashboardData.approvedMembers || 0} subtext="Approved & Paying" color="green" />
-          <StatCard icon={IndianRupee} title="Total Revenue" value={`₹${(dashboardData.totalRevenue || 0).toLocaleString()}`} color="emerald"  />
-          <StatCard icon={BookOpen} title="Diet Plans" value={dashboardData.totalDietPlans || 0} subtext="Available plans" color="purple" />
+          <StatCard icon={Users} title="Total Members" value={dashboardData.totalMembers || 0} color="blue" to="/admin/members" />
+          <StatCard icon={UserCheck} title="Active Members" value={dashboardData.approvedMembers || 0}  color="green" to="/admin/members?status=approved" />
+          <StatCard icon={IndianRupee} title="Total Revenue" value={`₹${(dashboardData.totalRevenue || 0).toLocaleString()}`} color="emerald" />
+          <StatCard icon={BookOpen} title="Diet Plans" value={dashboardData.totalDietPlans || 0} color="purple" to="/admin/diets" />
         </div>
 
         <div className="secondary-stats-grid">
-          <StatCard icon={UserX} title="Pending Approvals" value={dashboardData.pendingMembers || 0} color="yellow" />
-          <StatCard icon={Clock} title="Expiring Soon" value={dashboardData.expiringMembersCount || 0} subtext="Next 7 days" color="orange" />
+           <StatCard icon={Clock} title="Expiring Soon" value={dashboardData.expiringMembersCount || 0} subtext="Next 7 days" color="orange" to="/admin/members?status=expiring" />
           <StatCard icon={Calendar} title="New This Month" value={dashboardData.newMembersThisMonth || 0} color="indigo" />
-          <StatCard icon={UserMinus} title="Expired Members" value={dashboardData.statusDistribution.expired || 0} color="red" />
+          <StatCard icon={UserMinus} title="Expired Members" value={dashboardData.statusDistribution.expired || 0} color="red" to="/admin/members?status=expired" />
         </div>
 
         <div className="charts-grid">

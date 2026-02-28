@@ -88,3 +88,13 @@ tbody tr:hover {
     background-color: #dc3545;
     color: white;
 }
+
+/* Fade animation for table rows during pagination */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}

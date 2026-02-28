@@ -10,7 +10,7 @@ const initialState = {
     sortBy: 'createdAt',
     sortOrder: 'desc',
     page: 1,
-    limit: 10,
+    limit: 25,
   },
   pagination: {
     current: 1,
@@ -57,7 +57,7 @@ const membersSlice = createSlice({
         sortBy: 'createdAt',
         sortOrder: 'desc',
         page: 1,
-        limit: 10,
+        limit: 25,
       };
     },
     setSelectedMembers: (state, action) => {
