@@ -381,6 +381,60 @@ const sendMessage = async (req, res) => {
   }
 };
 
+// Renew member
+const renewMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { joiningDate, month, fees, description } = req.body;
+
+    const member = await Member.findById(id);
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found'
+      });
+    }
+
+    // Archive current subscription data if it has fees (i.e., was an actual subscription, not just a pending shell)
+    // or we can just always archive it to maintain exact history.
+    member.subscriptionHistory.push({
+      joiningDate: member.joiningDate,
+      endingDate: member.endingDate,
+      month: member.month,
+      fees: member.fees,
+      description: member.description,
+      archivedAt: new Date()
+    });
+
+    // Update with new data
+    member.joiningDate = joiningDate ? new Date(joiningDate) : new Date();
+    member.month = parseInt(month, 10) || 1;
+    member.fees = parseFloat(fees) || 0;
+    if (description !== undefined) {
+      member.description = description;
+    }
+
+    // Set status
+    member.status = member.fees > 0 ? 'approved' : 'pending';
+
+    // endingDate is auto-calculated by the pre-save hook in Member.js when joiningDate or month is modified
+
+    await member.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Member renewed successfully',
+      member
+    });
+  } catch (error) {
+    console.error('Renew member error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to renew member'
+    });
+  }
+};
+
 module.exports = {
   addMember,
   getMembers,
@@ -388,5 +442,6 @@ module.exports = {
   deleteMember,
   bulkDeleteMembers,
   sendMessage,
-  runExpireMaintenance
+  runExpireMaintenance,
+  renewMember
 };

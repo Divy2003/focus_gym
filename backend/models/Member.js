@@ -47,7 +47,18 @@ const memberSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  subscriptionHistory: [{
+    joiningDate: Date,
+    endingDate: Date,
+    month: Number,
+    fees: Number,
+    description: String,
+    archivedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });

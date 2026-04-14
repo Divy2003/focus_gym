@@ -73,6 +73,14 @@ export const gymApi = createApi({
       }),
       invalidatesTags: ['Member', 'Analytics'],
     }),
+    renewMember: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/members/${id}/renew`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Member', 'Analytics'],
+    }),
     deleteMember: builder.mutation({
       query: (id) => ({
         url: `/members/${id}`,
@@ -169,6 +177,7 @@ export const {
   useGetMembersQuery,
   useAddMemberMutation,
   useUpdateMemberMutation,
+  useRenewMemberMutation,
   useDeleteMemberMutation,
   useBulkDeleteMembersMutation,
   useSendMessageMutation,

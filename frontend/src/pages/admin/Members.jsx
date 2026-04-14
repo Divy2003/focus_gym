@@ -7,6 +7,7 @@ import {
   useGetMembersQuery,
   useAddMemberMutation,
   useUpdateMemberMutation,
+  useRenewMemberMutation,
   useDeleteMemberMutation,
   useBulkDeleteMembersMutation
 } from '../../redux/api/gymApi';
@@ -18,12 +19,15 @@ import {
   clearSelectedMembers,
   setShowAddModal,
   setShowEditModal,
-  setEditingMember
+  setShowRenewModal,
+  setEditingMember,
+  setRenewingMember
 } from '../../redux/slices/membersSlice.js';
 import {
   Search, Plus, Edit, Trash2, MessageSquare, X, Users, Calendar, Phone, IndianRupee, CheckCircle, Clock, XCircle, Loader2, MessageCircle, Camera, RefreshCw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import UpdateMemberModalFixed from '../../components/admin/UpdateMemberModalFixed';
+import RenewMemberModal from '../../components/admin/RenewMemberModal';
 import '../../styles/admin/MembersPage.css';
 
 const MembersPage = () => {
@@ -43,11 +47,12 @@ const MembersPage = () => {
     window.open(`https://wa.me/${phoneNumber}`, '_blank');
   };
   const dispatch = useDispatch();
-  const { selectedMembers = [], filters, showAddModal, showEditModal, editingMember } = useSelector(state => state.members);
+  const { selectedMembers = [], filters, showAddModal, showEditModal, showRenewModal, editingMember, renewingMember } = useSelector(state => state.members);
 
   const { data: membersData, isLoading, isFetching, error, refetch } = useGetMembersQuery(filters);
   const [addMember, { isLoading: isAdding }] = useAddMemberMutation();
   const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
+  const [renewMember, { isLoading: isRenewing }] = useRenewMemberMutation();
   const [deleteMember] = useDeleteMemberMutation();
   const [bulkDeleteMembers] = useBulkDeleteMembersMutation();
 
@@ -232,6 +237,20 @@ const MembersPage = () => {
       refetch();
     } catch (err) {
       console.error('Failed to update member:', err);
+    }
+  };
+
+  const handleRenewSubmit = async (memberId, formData) => {
+    try {
+      await renewMember({
+        id: memberId,
+        ...formData
+      }).unwrap();
+
+      dispatch(setShowRenewModal(false));
+      refetch();
+    } catch (err) {
+      console.error('Failed to renew member:', err);
     }
   };
 
@@ -459,6 +478,14 @@ const MembersPage = () => {
                               <FaWhatsapp size={18} />
                             </button>
                             <button
+                              onClick={() => dispatch(setRenewingMember(member))}
+                              className="icon-btn edit-btn"
+                              style={{ backgroundColor: '#2196f3' }}
+                              title="Renew Membership"
+                            >
+                              <RefreshCw size={16} />
+                            </button>
+                            <button
                               onClick={() => dispatch(setEditingMember(member))}
                               className="icon-btn edit-btn"
                               title="Edit member"
@@ -531,6 +558,14 @@ const MembersPage = () => {
                           title="Message on WhatsApp"
                         >
                           <FaWhatsapp size={18} />
+                        </button>
+                        <button
+                          onClick={() => dispatch(setRenewingMember(member))}
+                          className="icon-btn edit-btn"
+                          style={{ backgroundColor: '#2196f3' }}
+                          title="Renew Membership"
+                        >
+                          <RefreshCw size={16} />
                         </button>
                         <button
                           onClick={() => dispatch(setEditingMember(member))}
@@ -729,6 +764,15 @@ const MembersPage = () => {
         onClose={handleCloseEditModal}
         onUpdate={handleFixedModalUpdate}
         isLoading={isUpdating}
+      />
+
+      {/* Renew Member Modal */}
+      <RenewMemberModal
+        member={renewingMember}
+        isOpen={showRenewModal}
+        onClose={() => dispatch(setShowRenewModal(false))}
+        onRenew={handleRenewSubmit}
+        isLoading={isRenewing}
       />
 
       {/* Image Preview Modal */}

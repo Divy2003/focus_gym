@@ -22,8 +22,10 @@ const initialState = {
   error: null,
   showAddModal: false,
   showEditModal: false,
+  showRenewModal: false,
   showMessageModal: false,
   editingMember: null,
+  renewingMember: null,
 };
 
 const membersSlice = createSlice({
@@ -86,6 +88,16 @@ const membersSlice = createSlice({
         state.editingMember = null;
       }
     },
+    setShowRenewModal: (state, action) => {
+      state.showRenewModal = action.payload;
+      if (!action.payload) {
+        state.renewingMember = null;
+      }
+    },
+    setRenewingMember: (state, action) => {
+      state.renewingMember = action.payload;
+      state.showRenewModal = true;
+    },
     setShowMessageModal: (state, action) => {
       state.showMessageModal = action.payload;
     },
@@ -125,8 +137,10 @@ export const {
   clearSelectedMembers,
   setShowAddModal,
   setShowEditModal,
+  setShowRenewModal,
   setShowMessageModal,
   setEditingMember,
+  setRenewingMember,
   updateMemberInList,
   removeMemberFromList,
   addMemberToList,

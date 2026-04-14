@@ -9,7 +9,8 @@ const {
   deleteMember,
   bulkDeleteMembers,
   sendMessage,
-  runExpireMaintenance
+  runExpireMaintenance,
+  renewMember
 } = require('../controllers/memberController');
 
 const router = express.Router();
@@ -53,6 +54,7 @@ router.use(authMiddleware);
 
 router.get('/', getMembers);
 router.put('/:id', updateMemberValidation, updateMember);
+router.put('/:id/renew', renewMember);
 router.delete('/:id', deleteMember);
 router.post('/bulk-delete', [
   body('memberIds').isArray().withMessage('Member IDs must be an array')
